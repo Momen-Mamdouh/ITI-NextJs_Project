@@ -8,8 +8,8 @@ import mongoose from "mongoose";
 import { revalidatePath } from "next/cache";
 
 async function getSellerObjectId() {
-  const session = await requireAuth(["seller"]);
-  await dbConnect();
+  const session = await dbConnect();
+  await requireAuth(["seller"]);
   const seller = await SellerModel.findOne({ userId: session.id }).lean();
   if (!seller) throw new Error("Seller profile not found");
   return seller._id;
