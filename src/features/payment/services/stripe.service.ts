@@ -1,30 +1,35 @@
-import Stripe from "stripe";
+import { stripe } from "@/lib/stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-03-25.dahlia",
-  typescript: true,
-});
-
-export async function createPaymentIntent(
-  amount: number,
-  currency: string,
-  customerId?: string,
-) {
-  return stripe.paymentIntents.create({
-    amount,
-    currency,
-    customer: customerId,
-    automatic_payment_methods: { enabled: true },
-  });
+export interface CreatePaymentIntentParams {
+  amount: number;
+  currency: string;
+  orderId: string;
+  receiptEmail?: string;
 }
 
-export async function constructWebhookEvent(
-  payload: string | Buffer,
-  signature: string,
-) {
+export async function createPaymentIntent(params: CreatePaymentIntentParams) {
+  const { amount, currency, orderId, receiptEmail } = params;
+
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: Math.round(amount * 100), // Stripe expects smallest currency unit
+    currency,
+    metadata: { orderId },
+    receipt_email: receiptEmail,
+    automatic_payment_methods: {
+      enabled: true,
+    },
+  });
+
+  return paymentIntent;
+}
+
+export function verifyWebhookSignature(payload: string, signature: string) {
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    throw new Error("Missing STRIPE_WEBHOOK_SECRET");
+  }
   return stripe.webhooks.constructEvent(
     payload,
     signature,
-    process.env.STRIPE_WEBHOOK_SECRET!,
+    process.env.STRIPE_WEBHOOK_SECRET,
   );
 }
