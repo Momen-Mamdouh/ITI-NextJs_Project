@@ -40,7 +40,7 @@ export async function registerUser(rawData: unknown) {
   await setSessionCookies(tokens.access, tokens.refresh);
   return {
     success: true,
-    user: { id: user._id, name: user.name, email: user.email, role: user.role },
+    user: { id: user._id.toString(), name: user.name, email: user.email, role: user.role },
   };
 }
 
@@ -69,7 +69,7 @@ export async function loginUser(rawData: unknown) {
   await setSessionCookies(tokens.access, tokens.refresh);
   return {
     success: true,
-    user: { id: user._id, name: user.name, email: user.email, role: user.role },
+    user: { id: user._id.toString(), name: user.name, email: user.email, role: user.role },
   };
 }
 
