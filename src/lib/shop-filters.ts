@@ -1,4 +1,4 @@
-import type { ProductListFilters } from "@/features/products/product-actions";
+import type { ProductListFilters } from "@/features/products/product-query";
 
 export type ShopSearchParams = Record<string, string | string[] | undefined>;
 
@@ -36,4 +36,17 @@ export function parseProductListParams(
     inStockOnly: inStockOnly || undefined,
     sort,
   };
+}
+
+export function serializeProductFilters(f: ProductListFilters): string {
+  const p = new URLSearchParams();
+  if (f.search) p.set("search", f.search);
+  if (f.category) p.set("category", f.category);
+  if (f.minPrice != null && !Number.isNaN(f.minPrice))
+    p.set("minPrice", String(f.minPrice));
+  if (f.maxPrice != null && !Number.isNaN(f.maxPrice))
+    p.set("maxPrice", String(f.maxPrice));
+  if (f.inStockOnly) p.set("inStock", "1");
+  if (f.sort && f.sort !== "newest") p.set("sort", f.sort);
+  return p.toString();
 }

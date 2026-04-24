@@ -3,6 +3,10 @@ import { z } from "zod";
 import { requireAuth } from "@/lib/auth";
 import dbConnect from "@/lib/db";
 import ProductModel from "@/features/products/models/product.model";
+import {
+  queryProductList,
+  type ProductListFilters,
+} from "@/features/products/product-query";
 import SellerModel from "@/features/seller/models/seller.model";
 import { revalidatePath } from "next/cache";
 
@@ -30,15 +34,7 @@ const ProductSchema = z.object({
 const ProductWriteSchema = ProductSchema.omit({ sellerId: true });
 const ProductUpdateSchema = ProductSchema.partial().omit({ sellerId: true });
 
-export type ProductListFilters = {
-  category?: string;
-  search?: string;
-  sellerId?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  inStockOnly?: boolean;
-  sort?: "newest" | "price_asc" | "price_desc";
-};
+export type { ProductListFilters } from "@/features/products/product-query";
 
 export async function fetchProductCategoryNames() {
   await dbConnect();
@@ -56,41 +52,7 @@ export async function fetchProductCategoryNames() {
 }
 
 export async function fetchProducts(filters?: ProductListFilters) {
-  await dbConnect();
-  const query: Record<string, unknown> = {};
-  if (filters?.category) query.category = filters.category;
-  if (filters?.sellerId) query.sellerId = filters.sellerId;
-  if (filters?.search) {
-    const term = filters.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    query.$or = [
-      { name: { $regex: term, $options: "i" } },
-      { description: { $regex: term, $options: "i" } },
-    ];
-  }
-  if (filters?.inStockOnly) {
-    query.stock = { $gt: 0 };
-  }
-  const priceCond: Record<string, number> = {};
-  if (filters?.minPrice != null && !Number.isNaN(filters.minPrice)) {
-    priceCond.$gte = filters.minPrice;
-  }
-  if (filters?.maxPrice != null && !Number.isNaN(filters.maxPrice)) {
-    priceCond.$lte = filters.maxPrice;
-  }
-  if (Object.keys(priceCond).length) {
-    query.price = priceCond;
-  }
-
-  let sort: Record<string, 1 | -1> = { createdAt: -1 };
-  if (filters?.sort === "price_asc") sort = { price: 1 };
-  if (filters?.sort === "price_desc") sort = { price: -1 };
-
-  try {
-    const products = await ProductModel.find(query).sort(sort).lean();
-    return { success: true, data: products };
-  } catch {
-    return { success: false, error: "Failed to fetch products" };
-  }
+  return queryProductList(filters);
 }
 
 export async function createProduct(rawData: unknown) {

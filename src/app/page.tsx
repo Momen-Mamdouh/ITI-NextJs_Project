@@ -2,8 +2,8 @@ import {
   fetchProducts,
   fetchProductCategoryNames,
 } from "@/features/products/product-actions";
-import { ProductCard, type ProductView } from "@/components/shop/ProductCard";
-import { ShopFilters } from "@/components/shop/ShopFilters";
+import { ShopCatalog } from "@/components/shop/ShopCatalog";
+import type { ProductView } from "@/components/shop/ProductCard";
 import {
   parseProductListParams,
   type ShopSearchParams,
@@ -48,8 +48,12 @@ export default async function Home({
   ]);
 
   const raw = res.success && res.data ? res.data : [];
-  const products: ProductView[] = JSON.parse(JSON.stringify(raw)).map(toView);
+  const initialProducts: ProductView[] = JSON.parse(JSON.stringify(raw)).map(
+    toView,
+  );
   const categoryNames = categoryNamesRes.success ? categoryNamesRes.names : [];
+  const storeEmpty =
+    initialProducts.length === 0 && categoryNames.length === 0;
 
   return (
     <main className="min-h-screen">
@@ -59,24 +63,17 @@ export default async function Home({
             Shop
           </h1>
           <p className="mt-2 max-w-2xl mx-auto text-sm text-muted-foreground">
-            Search and filter by category, price, and availability. Add items to
-            your cart; sign in as a customer to sync your cart to your account.
+            Filters apply as you change them. Add items to your cart; sign in as
+            a customer to sync your cart to your account.
           </p>
         </div>
 
-        <ShopFilters categoryNames={categoryNames} active={filters} />
-
-        {products.length === 0 ? (
-          <p className="text-center text-muted-foreground py-16">
-            No products yet. Add some from the seller or admin area.
-          </p>
-        ) : (
-          <div className="grid w-full grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {products.map((p) => (
-              <ProductCard key={p._id} product={p} />
-            ))}
-          </div>
-        )}
+        <ShopCatalog
+          categoryNames={categoryNames}
+          initialFilters={filters}
+          initialProducts={initialProducts}
+          storeEmpty={storeEmpty}
+        />
       </div>
     </main>
   );
