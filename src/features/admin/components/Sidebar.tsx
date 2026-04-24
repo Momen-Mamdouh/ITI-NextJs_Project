@@ -1,10 +1,18 @@
 import Link from "next/link";
-import { Users, Package, ShoppingCart, FileText, Settings } from "lucide-react";
+import {
+  Users,
+  Package,
+  ShoppingCart,
+  FileText,
+  Settings,
+  FolderTree,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/admin/users", icon: Users, label: "Users" },
   { href: "/admin/products", icon: Package, label: "Products" },
+  { href: "/admin/categories", icon: FolderTree, label: "Categories" },
   { href: "/admin/orders", icon: ShoppingCart, label: "Orders" },
   { href: "/admin/promos", icon: FileText, label: "Promos" },
   { href: "/admin/settings", icon: Settings, label: "Settings" },

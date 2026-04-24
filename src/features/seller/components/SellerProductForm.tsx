@@ -40,11 +40,19 @@ const ProductFormSchema = z.object({
 type ProductFormValues = z.infer<typeof ProductFormSchema>;
 
 interface ProductFormProps {
+  categoryOptions: { name: string }[];
   initialData?: Partial<ProductFormValues> & { _id?: string };
   onSuccess: () => void;
 }
 
+const FALLBACK = [
+  { name: "Electronics" },
+  { name: "Fashion" },
+  { name: "Accessories" },
+];
+
 export function SellerProductForm({
+  categoryOptions,
   initialData,
   onSuccess,
 }: ProductFormProps) {
@@ -61,6 +69,9 @@ export function SellerProductForm({
       isActive: initialData?.isActive ?? true,
     },
   });
+
+  const categories =
+    categoryOptions.length > 0 ? categoryOptions : FALLBACK;
 
   async function onSubmit(values: ProductFormValues) {
     setLoading(true);
@@ -109,19 +120,18 @@ export function SellerProductForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Category</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select..." />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="electronics">Electronics</SelectItem>
-                    <SelectItem value="clothing">Clothing</SelectItem>
-                    <SelectItem value="home">Home</SelectItem>
+                    {categories.map((c) => (
+                      <SelectItem key={c.name} value={c.name}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />

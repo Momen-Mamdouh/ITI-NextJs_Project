@@ -30,7 +30,14 @@ async function seed() {
 
   // ─── Clean existing seed data ─────────────────────────
   const db = mongoose.connection.db!;
-  const collections = ["users", "sellers", "products", "orders", "reviews"];
+  const collections = [
+    "users",
+    "sellers",
+    "products",
+    "categories",
+    "orders",
+    "reviews",
+  ];
   for (const name of collections) {
     const col = db.collection(name);
     const count = await col.countDocuments();
@@ -401,6 +408,26 @@ async function seed() {
     });
   }
   console.log(`✓ Created ${products.length} products`);
+
+  const categoriesCol = db.collection("categories");
+  const uniqueCategories = [...new Set(products.map((p) => p.category))];
+  const catNow = new Date();
+  for (const name of uniqueCategories) {
+    const slug = name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    await categoriesCol.insertOne({
+      _id: new mongoose.Types.ObjectId(),
+      name,
+      slug,
+      isActive: true,
+      createdAt: catNow,
+      updatedAt: catNow,
+    });
+  }
+  console.log(`✓ Created ${uniqueCategories.length} categories`);
 
   // Add some products to customer wishlists
   await usersCol.updateOne(

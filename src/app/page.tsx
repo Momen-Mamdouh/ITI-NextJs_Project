@@ -1,5 +1,13 @@
-import { fetchProducts } from "@/features/products/product-actions";
+import {
+  fetchProducts,
+  fetchProductCategoryNames,
+} from "@/features/products/product-actions";
 import { ProductCard, type ProductView } from "@/components/shop/ProductCard";
+import { ShopFilters } from "@/components/shop/ShopFilters";
+import {
+  parseProductListParams,
+  type ShopSearchParams,
+} from "@/lib/shop-filters";
 
 function toView(p: unknown): ProductView {
   const x = p as {
@@ -26,10 +34,22 @@ function toView(p: unknown): ProductView {
   };
 }
 
-export default async function Home() {
-  const res = await fetchProducts();
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<ShopSearchParams>;
+}) {
+  const sp = await searchParams;
+  const filters = parseProductListParams(sp);
+
+  const [res, categoryNamesRes] = await Promise.all([
+    fetchProducts(filters),
+    fetchProductCategoryNames(),
+  ]);
+
   const raw = res.success && res.data ? res.data : [];
   const products: ProductView[] = JSON.parse(JSON.stringify(raw)).map(toView);
+  const categoryNames = categoryNamesRes.success ? categoryNamesRes.names : [];
 
   return (
     <main className="min-h-screen">
@@ -39,10 +59,12 @@ export default async function Home() {
             Shop
           </h1>
           <p className="mt-2 max-w-2xl mx-auto text-sm text-muted-foreground">
-            Browse products and add them to your cart. Guests check out on the
-            cart page; sign in to sync your cart to your account.
+            Search and filter by category, price, and availability. Add items to
+            your cart; sign in as a customer to sync your cart to your account.
           </p>
         </div>
+
+        <ShopFilters categoryNames={categoryNames} active={filters} />
 
         {products.length === 0 ? (
           <p className="text-center text-muted-foreground py-16">

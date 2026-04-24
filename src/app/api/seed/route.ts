@@ -14,7 +14,14 @@ export async function GET() {
   const db = mongoose.connection.db!;
 
   // Clean
-  for (const name of ["users", "sellers", "products", "orders", "reviews"]) {
+  for (const name of [
+    "users",
+    "sellers",
+    "products",
+    "categories",
+    "orders",
+    "reviews",
+  ]) {
     await db.collection(name).deleteMany({});
   }
 
@@ -79,6 +86,23 @@ export async function GET() {
     const id = new mongoose.Types.ObjectId();
     productIds.push(id);
     await db.collection("products").insertOne({ _id: id, ...p, createdAt: now, updatedAt: now });
+  }
+
+  const uniqueCategories = [...new Set(productsList.map((p) => p.category))];
+  for (const name of uniqueCategories) {
+    const slug = name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    await db.collection("categories").insertOne({
+      _id: new mongoose.Types.ObjectId(),
+      name,
+      slug,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    });
   }
 
   // Update wishlists

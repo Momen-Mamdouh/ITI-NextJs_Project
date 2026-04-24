@@ -40,7 +40,13 @@ interface ProductDoc {
   createdAt: string;
 }
 
-export function SellerProductTable({ products }: { products: ProductDoc[] }) {
+export function SellerProductTable({
+  products,
+  categoryOptions,
+}: {
+  products: ProductDoc[];
+  categoryOptions: { name: string }[];
+}) {
   const [search, setSearch] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<ProductDoc | null>(
     null,
@@ -86,6 +92,7 @@ export function SellerProductTable({ products }: { products: ProductDoc[] }) {
                 <DialogTitle>Add New Product</DialogTitle>
               </DialogHeader>
               <SellerProductForm
+                categoryOptions={categoryOptions}
                 onSuccess={() => {
                   router.refresh();
                   toast.success("Product created");
@@ -160,6 +167,8 @@ export function SellerProductTable({ products }: { products: ProductDoc[] }) {
                           </DialogHeader>
                           {selectedProduct && (
                             <SellerProductForm
+                              key={selectedProduct._id}
+                              categoryOptions={categoryOptions}
                               initialData={selectedProduct}
                               onSuccess={() => {
                                 router.refresh();
