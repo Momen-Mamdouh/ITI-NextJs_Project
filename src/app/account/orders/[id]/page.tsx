@@ -6,10 +6,17 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { OrderTimeline } from "@/components/order/OrderTimeline";
 
 interface OrderDetailPageProps {
   params: Promise<{ id: string }>;
 }
+
+const PAYMENT_LABELS: Record<string, string> = {
+  stripe: "Stripe",
+  cod: "Cash on Delivery",
+  wallet: "Wallet",
+};
 
 export default async function OrderDetailPage({
   params,
@@ -41,20 +48,20 @@ export default async function OrderDetailPage({
         </div>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Badge>{order.status}</Badge>
         <Badge variant={order.paymentStatus === "paid" ? "default" : "outline"}>
           Payment: {order.paymentStatus}
         </Badge>
-        {order.trackingNumber && (
+        {order.paymentMethod && (
           <Badge variant="secondary">
-            Tracking: {order.trackingNumber}
+            {PAYMENT_LABELS[order.paymentMethod] || order.paymentMethod}
           </Badge>
         )}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-base">Items</CardTitle>
           </CardHeader>
@@ -110,34 +117,50 @@ export default async function OrderDetailPage({
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Shipping Address</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground space-y-0.5">
-            {order.shippingAddress ? (
-              <>
-                <p className="font-medium text-foreground">
-                  {order.shippingAddress.fullName}
-                </p>
-                <p>{order.shippingAddress.addressLine1}</p>
-                {order.shippingAddress.addressLine2 && (
-                  <p>{order.shippingAddress.addressLine2}</p>
-                )}
-                <p>
-                  {order.shippingAddress.city}, {order.shippingAddress.state}{" "}
-                  {order.shippingAddress.postalCode}
-                </p>
-                <p>{order.shippingAddress.country}</p>
-                {order.shippingAddress.phone && (
-                  <p>{order.shippingAddress.phone}</p>
-                )}
-              </>
-            ) : (
-              <p>No shipping address provided</p>
-            )}
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Order Tracking</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <OrderTimeline
+                statusHistory={order.statusHistory || []}
+                currentStatus={order.status}
+                trackingNumber={order.trackingNumber}
+                carrier={order.carrier}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Shipping Address</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground space-y-0.5">
+              {order.shippingAddress ? (
+                <>
+                  <p className="font-medium text-foreground">
+                    {order.shippingAddress.fullName}
+                  </p>
+                  <p>{order.shippingAddress.addressLine1}</p>
+                  {order.shippingAddress.addressLine2 && (
+                    <p>{order.shippingAddress.addressLine2}</p>
+                  )}
+                  <p>
+                    {order.shippingAddress.city}, {order.shippingAddress.state}{" "}
+                    {order.shippingAddress.postalCode}
+                  </p>
+                  <p>{order.shippingAddress.country}</p>
+                  {order.shippingAddress.phone && (
+                    <p>{order.shippingAddress.phone}</p>
+                  )}
+                </>
+              ) : (
+                <p>No shipping address provided</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

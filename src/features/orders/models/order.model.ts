@@ -68,6 +68,14 @@ const orderSchema = new mongoose.Schema(
     },
     trackingNumber: String,
     carrier: String,
+    statusHistory: [
+      {
+        status: String,
+        note: String,
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+    guestEmail: String,
     promoCode: { type: String, ref: "PromoCode" },
     notes: String,
   },
