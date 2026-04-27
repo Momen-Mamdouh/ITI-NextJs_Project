@@ -3,13 +3,15 @@ import { z } from "zod";
 import { requireAuth } from "@/lib/auth";
 import dbConnect from "@/lib/db";
 import OrderModel from "@/features/orders/models/order.model";
+import UserModel from "@/features/user/models/user.model";
 import SellerModel from "@/features/seller/models/seller.model";
 import mongoose from "mongoose";
 import { revalidatePath } from "next/cache";
+import { sendOrderStatusEmail } from "@/lib/mailer";
 
 async function getSellerObjectId() {
-  const session = await dbConnect();
-  await requireAuth(["seller"]);
+  await dbConnect();
+  const session = await requireAuth(["seller"]);
   const seller = await SellerModel.findOne({ userId: session.id }).lean();
   if (!seller) throw new Error("Seller profile not found");
   return seller._id;
@@ -30,7 +32,6 @@ const UpdateSellerOrderStatusSchema = z.object({
 export async function fetchSellerOrders() {
   const sellerId = await getSellerObjectId();
   try {
-    // Find orders where items contain this seller's products
     const orders = await OrderModel.aggregate([
       { $unwind: "$items" },
       { $match: { "items.sellerId": new mongoose.Types.ObjectId(sellerId) } },
@@ -44,6 +45,15 @@ export async function fetchSellerOrders() {
   }
 }
 
+async function resolveOrderEmail(order: { userId?: string; guestEmail?: string }): Promise<string | null> {
+  if (order.guestEmail) return order.guestEmail;
+  if (order.userId) {
+    const user = await UserModel.findById(order.userId).select("email").lean();
+    return (user as { email?: string } | null)?.email ?? null;
+  }
+  return null;
+}
+
 export async function updateSellerOrderStatus(rawData: unknown) {
   const sellerId = await getSellerObjectId();
   const validated = UpdateSellerOrderStatusSchema.safeParse(rawData);
@@ -52,7 +62,6 @@ export async function updateSellerOrderStatus(rawData: unknown) {
   await dbConnect();
   try {
     const { orderId, status } = validated.data;
-    // Verify order contains seller's items before allowing update
     const order = await OrderModel.findOne({
       _id: orderId,
       "items.sellerId": new mongoose.Types.ObjectId(sellerId),
@@ -60,8 +69,33 @@ export async function updateSellerOrderStatus(rawData: unknown) {
     if (!order)
       return { success: false, error: "Unauthorized or order not found" };
 
-    await OrderModel.findByIdAndUpdate(orderId, { status });
+    const updated = await OrderModel.findByIdAndUpdate(
+      orderId,
+      {
+        status,
+        $push: {
+          statusHistory: {
+            status,
+            note: `Status updated by seller to ${status}`,
+          },
+        },
+      },
+      { new: true },
+    ).lean();
+
+    if (updated) {
+      const email = await resolveOrderEmail(updated as { userId?: string; guestEmail?: string });
+      if (email) {
+        sendOrderStatusEmail({
+          to: email,
+          orderId,
+          newStatus: status,
+        }).catch(() => {});
+      }
+    }
+
     revalidatePath("/seller/orders");
+    revalidatePath("/account/orders");
     return { success: true };
   } catch {
     return { success: false, error: "Failed to update order" };
