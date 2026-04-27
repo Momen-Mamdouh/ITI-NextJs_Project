@@ -1,87 +1,65 @@
-import { NextRequest, NextResponse } from "next/server";
-import { verifyWebhookSignature } from "@/features/payment/services/stripe.service";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import Stripe from "stripe";
 import dbConnect from "@/lib/db";
 import OrderModel from "@/features/orders/models/order.model";
-import PaymentModel from "@/features/payment/models/payment.model";
+import ProductModel from "@/features/products/models/product.model";
+import UserModel from "@/features/user/models/user.model";
 
-export async function POST(req: NextRequest) {
-  const body = await req.text();
-  const signature = req.headers.get("stripe-signature") || "";
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
+export async function POST(request: NextRequest) {
+  const body = await request.text();
+  const sig = request.headers.get("stripe-signature");
+
+  if (!sig || !process.env.STRIPE_WEBHOOK_SECRET) {
+    return NextResponse.json({ error: "Missing signature" }, { status: 400 });
+  }
+
+  let event: Stripe.Event;
   try {
-    await dbConnect();
-    const event = verifyWebhookSignature(body, signature);
-
-    switch (event.type) {
-      case "payment_intent.succeeded": {
-        const { id, amount, metadata, receipt_url, payment_method } = event.data
-          .object as unknown as {
-          id: string;
-          amount: number;
-          metadata: { orderId: string };
-          receipt_url?: string;
-          payment_method: string;
-        };
-
-        const { orderId } = metadata;
-
-        await OrderModel.findByIdAndUpdate(orderId, {
-          status: "paid",
-          paymentStatus: "paid",
-          notes: `Paid via Stripe (${id})`,
-        });
-
-        await PaymentModel.findOneAndUpdate(
-          { stripePaymentIntentId: id },
-          {
-            orderId,
-            stripePaymentIntentId: id,
-            amount: amount / 100,
-            currency: "usd",
-            status: "succeeded",
-            method: "card",
-            receiptUrl: receipt_url || "",
-            meta: { payment_method },
-          },
-          { upsert: true, new: true },
-        );
-
-        console.log(`PaymentIntent ${id} succeeded for Order ${orderId}`);
-        break;
-      }
-
-      case "payment_intent.payment_failed": {
-        const { id, metadata } = event.data.object as unknown as {
-          id: string;
-          metadata: { orderId: string };
-        };
-        const { orderId } = metadata;
-
-        await OrderModel.findByIdAndUpdate(orderId, {
-          paymentStatus: "failed",
-        });
-        await PaymentModel.findOneAndUpdate(
-          { stripePaymentIntentId: id },
-          { status: "failed" },
-          { upsert: true },
-        );
-        console.log(`PaymentIntent ${id} failed`);
-        break;
-      }
-    }
-
-    return NextResponse.json({ received: true }, { status: 200 });
-  } catch (error) {
-    console.error("Webhook Error:", error);
+    event = stripe.webhooks.constructEvent(
+      body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET,
+    );
+  } catch {
     return NextResponse.json(
-      { error: "Webhook handler failed" },
+      { error: "Invalid signature" },
       { status: 400 },
     );
   }
-}
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const orderId = session.metadata?.orderId;
+    if (!orderId) {
+      return NextResponse.json({ received: true });
+    }
+
+    await dbConnect();
+    const order = await OrderModel.findById(orderId);
+    if (!order || order.paymentStatus === "paid") {
+      return NextResponse.json({ received: true });
+    }
+
+    order.paymentStatus = "paid";
+    order.status = "processing";
+    order.stripeSessionId = session.id;
+    await order.save();
+
+    for (const item of order.items) {
+      await ProductModel.findByIdAndUpdate(item.productId, {
+        $inc: { stock: -item.quantity },
+      });
+    }
+
+    if (order.userId) {
+      await UserModel.findByIdAndUpdate(order.userId, {
+        $set: { cartItems: [] },
+      });
+    }
+  }
+
+  return NextResponse.json({ received: true });
+}

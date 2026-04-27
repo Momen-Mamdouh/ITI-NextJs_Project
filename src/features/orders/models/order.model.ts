@@ -55,6 +55,12 @@ const orderSchema = new mongoose.Schema(
       country: String,
       phone: String,
     },
+    paymentMethod: {
+      type: String,
+      enum: ["stripe", "cod", "wallet"],
+      default: "cod",
+    },
+    stripeSessionId: String,
     paymentStatus: {
       type: String,
       enum: ["pending", "paid", "failed", "refunded"],
