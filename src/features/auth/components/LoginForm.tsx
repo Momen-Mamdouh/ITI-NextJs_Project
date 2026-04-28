@@ -38,14 +38,18 @@ export function LoginForm({ redirectTo }: { redirectTo?: string | null }) {
     setError(null);
     const result = await loginUser(values);
     if (result.success) {
-      const u = result.user;
-      if (u?.role === "admin") router.push("/admin");
-      else if (u?.role === "seller") router.push("/seller");
-      else {
+      const role = result.user?.role;
+
+      if (role === "admin") {
+        router.push("/admin"); // ← Changed from /admin/users
+      } else if (role === "seller") {
+        router.push("/seller");
+      } else {
         const sp = safePath(redirectTo);
-        if (u?.role === "customer" && sp) router.push(sp);
+        if (role === "customer" && sp) router.push(sp);
         else router.push("/");
       }
+
       router.refresh();
     } else {
       setError(

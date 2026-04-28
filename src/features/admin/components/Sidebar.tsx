@@ -1,4 +1,6 @@
+"use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Users,
   Package,
@@ -6,10 +8,12 @@ import {
   FileText,
   Settings,
   FolderTree,
+  LayoutDashboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
+  { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/admin/users", icon: Users, label: "Users" },
   { href: "/admin/products", icon: Package, label: "Products" },
   { href: "/admin/categories", icon: FolderTree, label: "Categories" },
@@ -19,22 +23,31 @@ const navItems = [
 ];
 
 export function Sidebar() {
+  const pathname = usePathname();
+
   return (
     <aside className="w-64 bg-background border-r h-screen sticky top-0 p-4">
       <div className="font-bold text-xl mb-6 px-2">Admin Panel</div>
       <nav className="space-y-1">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted transition-colors",
-            )}
-          >
-            <item.icon className="h-4 w-4" />
-            <span>{item.label}</span>
-          </Link>
-        ))}
+        {navItems.map((item) => {
+          const isActive =
+            pathname === item.href ||
+            (item.href !== "/admin" && pathname.startsWith(item.href));
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted transition-colors",
+                isActive && "bg-primary/10 text-primary",
+              )}
+            >
+              <item.icon className="h-4 w-4" />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
       </nav>
     </aside>
   );

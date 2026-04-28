@@ -18,7 +18,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-background text-foreground antialiased" suppressHydrationWarning>
+      <body
+        className="min-h-screen bg-background text-foreground antialiased"
+        suppressHydrationWarning
+      >
         <Providers>
           <CartProvider>
             <WishlistProvider>
@@ -27,6 +30,7 @@ export default function RootLayout({
             </WishlistProvider>
           </CartProvider>
         </Providers>
+
         <Toaster richColors position="top-right" />
       </body>
     </html>
