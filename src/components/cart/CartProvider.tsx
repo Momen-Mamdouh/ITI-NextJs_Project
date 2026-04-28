@@ -56,9 +56,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     writeCartToStorage(next);
   }, []);
 
-  const clearLocal = useCallback(() => {
+  const clearLocal = useCallback(async () => {
     persist([]);
-    if (user?.role === "customer") void saveCustomerCart([]);
+    if (user?.role === "customer") {
+      await saveCustomerCart([]);
+    }
   }, [persist, user]);
 
   useEffect(() => {

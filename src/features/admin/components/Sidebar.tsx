@@ -7,7 +7,6 @@ import {
   Package,
   ShoppingCart,
   FileText,
-  Settings,
   FolderTree,
   LayoutDashboard,
   LogOut,
@@ -23,7 +22,6 @@ const navItems = [
   { href: "/admin/categories", icon: FolderTree, label: "Categories" },
   { href: "/admin/orders", icon: ShoppingCart, label: "Orders" },
   { href: "/admin/promos", icon: FileText, label: "Promos" },
-  { href: "/admin/settings", icon: Settings, label: "Settings" },
 ];
 
 export function Sidebar() {
