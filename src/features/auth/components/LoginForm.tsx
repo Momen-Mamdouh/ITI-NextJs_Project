@@ -16,9 +16,14 @@ import {
 } from "@/components/ui/form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { loginUser } from "@/features/auth/actions";
-import { LoginSchema } from "@/lib/auth";
+import { LoginSchema } from "@/lib/auth-schemas";
 
-export function LoginForm() {
+function safePath(next: string | undefined | null): string | null {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) return null;
+  return next;
+}
+
+export function LoginForm({ redirectTo }: { redirectTo?: string | null }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -40,10 +45,11 @@ export function LoginForm() {
       } else if (role === "seller") {
         router.push("/seller");
       } else {
-        if (role === "customer") {
-          router.push("/");
-        }
+        const sp = safePath(redirectTo);
+        if (role === "customer" && sp) router.push(sp);
+        else router.push("/");
       }
+
       router.refresh();
     } else {
       setError(

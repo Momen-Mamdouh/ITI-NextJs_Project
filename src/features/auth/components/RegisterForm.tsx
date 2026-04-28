@@ -23,9 +23,14 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { registerUser } from "@/features/auth/actions";
-import { RegisterSchema } from "@/lib/auth";
+import { RegisterSchema } from "@/lib/auth-schemas";
 
-export function RegisterForm() {
+function safePath(next: string | undefined | null): string | null {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) return null;
+  return next;
+}
+
+export function RegisterForm({ redirectTo }: { redirectTo?: string | null }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -46,7 +51,12 @@ export function RegisterForm() {
     setError(null);
     const result = await registerUser(values);
     if (result.success) {
-      router.push(values.role === "seller" ? "/seller/onboarding" : "/");
+      if (values.role === "seller") {
+        router.push("/seller");
+      } else {
+        const sp = safePath(redirectTo);
+        router.push(sp && values.role === "customer" ? sp : "/");
+      }
       router.refresh();
     } else {
       setError(

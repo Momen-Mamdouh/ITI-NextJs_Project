@@ -33,10 +33,12 @@ import {
 } from "@/components/ui/dialog";
 import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { ProductForm } from "./ProductForm";
+import { cn } from "@/lib/utils";
 
 interface ProductDoc {
   _id: string;
   name: string;
+  description?: string;
   price: number;
   stock: number;
   category: string;
@@ -48,22 +50,29 @@ interface ProductDoc {
 
 export function ProductTable({
   products,
-  sellerId,
+  categoryOptions,
+  sessionRole,
+  adminSellers,
 }: {
   products: ProductDoc[];
-  sellerId: string;
+  categoryOptions: { name: string }[];
+  sessionRole: "admin" | "seller";
+  adminSellers?: { id: string; label: string }[];
 }) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<ProductDoc | null>(
     null,
   );
+  const [createOpen, setCreateOpen] = useState(false);
   const router = useRouter();
 
+  const q = search.toLowerCase();
   const filtered = products.filter(
     (p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.category.toLowerCase().includes(search.toLowerCase()),
+      p.name.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q) ||
+      (p.description?.toLowerCase().includes(q) ?? false),
   );
 
   async function handleToggleStatus(productId: string, isActive: boolean) {
@@ -91,35 +100,49 @@ export function ProductTable({
     }
   }
 
+  const formVariant = sessionRole === "admin" ? "admin" : "seller";
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-bold">Product Management</h2>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Input
-            placeholder="Search products..."
+            placeholder="Search name, category, description…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="max-w-xs"
+            className="max-w-xs min-w-[200px]"
           />
-          <Dialog>
-            <DialogTrigger>
-              <Button>Create Product</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Add New Product</DialogTitle>
-              </DialogHeader>
-            </DialogContent>
-          </Dialog>
+          <Button type="button" onClick={() => setCreateOpen(true)}>
+            Create Product
+          </Button>
         </div>
       </div>
 
-      <div className="border rounded-lg bg-background">
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New Product</DialogTitle>
+          </DialogHeader>
+          <ProductForm
+            categoryOptions={categoryOptions}
+            variant={formVariant}
+            adminSellers={formVariant === "admin" ? adminSellers : undefined}
+            onSuccess={() => {
+              setCreateOpen(false);
+              router.refresh();
+              toast.success("Product created");
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <div className="border rounded-lg bg-background overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Product</TableHead>
+              <TableHead className="min-w-[200px]">Description</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Stock</TableHead>
@@ -133,48 +156,64 @@ export function ProductTable({
                 key={product._id}
                 className={!product.isActive ? "bg-muted/20" : ""}
               >
-                <TableCell className="font-medium">
-                  <div className="flex items-center gap-3">
-                    {product.images[0] && (
+                <TableCell className="font-medium align-top">
+                  <div className="flex items-start gap-3 max-w-[220px]">
+                    {product.images[0] ? (
                       <Image
                         src={product.images[0]}
                         alt={product.name}
-                        width={40}
-                        height={40}
-                        className="rounded object-cover"
+                        width={44}
+                        height={44}
+                        className="rounded-md object-cover shrink-0"
                       />
+                    ) : (
+                      <div className="size-11 shrink-0 rounded-md bg-muted" />
                     )}
-                    {product.name}
+                    <span className="line-clamp-3 text-sm leading-snug">
+                      {product.name}
+                    </span>
                   </div>
                 </TableCell>
-                <TableCell>{product.category}</TableCell>
-                <TableCell>${product.price.toFixed(2)}</TableCell>
-                <TableCell>
+                <TableCell className="align-top text-muted-foreground text-xs">
+                  <p className="line-clamp-3 max-w-xs">
+                    {product.description ?? "—"}
+                  </p>
+                </TableCell>
+                <TableCell className="align-top">{product.category}</TableCell>
+                <TableCell className="align-top whitespace-nowrap">
+                  ${product.price.toFixed(2)}
+                </TableCell>
+                <TableCell className="align-top">
                   <Badge
                     variant={
-                      product.stock < 10
-                        ? "destructive"
-                        : product.stock < 50
-                          ? "secondary"
-                          : "default"
+                      product.stock <= 0
+                        ? "outline"
+                        : product.stock < 10
+                          ? "destructive"
+                          : product.stock < 50
+                            ? "secondary"
+                            : "default"
                     }
+                    className={cn(product.stock <= 0 && "text-muted-foreground")}
                   >
-                    {product.stock} {product.stock < 10 && "(Low)"}
+                    {product.stock <= 0
+                      ? "Out of stock"
+                      : `${product.stock}${product.stock < 10 ? " (Low)" : ""}`}
                   </Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell className="align-top">
                   <Badge
                     variant={product.isActive ? "default" : "outline"}
                     className={
                       product.isActive
-                        ? "bg-green-500 hover:bg-green-600 text-white"
+                        ? "bg-green-600 hover:bg-green-600 text-white"
                         : ""
                     }
                   >
                     {product.isActive ? "Active" : "Inactive"}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right align-top">
                   <DropdownMenu>
                     <DropdownMenuTrigger>
                       <Button
@@ -197,13 +236,20 @@ export function ProductTable({
                             <Edit className="mr-2 h-4 w-4" /> Edit
                           </DropdownMenuItem>
                         </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
+                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                           <DialogHeader>
                             <DialogTitle>Edit Product</DialogTitle>
                           </DialogHeader>
                           {selectedProduct && (
                             <ProductForm
-                              sellerId={sellerId}
+                              key={selectedProduct._id}
+                              categoryOptions={categoryOptions}
+                              variant={formVariant}
+                              adminSellers={
+                                formVariant === "admin"
+                                  ? adminSellers
+                                  : undefined
+                              }
                               initialData={selectedProduct}
                               onSuccess={() => {
                                 router.refresh();

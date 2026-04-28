@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -47,17 +47,43 @@ const ProductFormSchema = z.object({
 type ProductFormValues = z.input<typeof ProductFormSchema>;
 
 interface ProductFormProps {
-  sellerId: string;
+  categoryOptions: { name: string }[];
+  variant: "admin" | "seller";
+  adminSellers?: { id: string; label: string }[];
   initialData?: Partial<ProductFormValues> & { _id?: string };
   onSuccess?: () => void;
 }
 
+const FALLBACK_CATEGORIES = [
+  { name: "Electronics" },
+  { name: "Fashion" },
+  { name: "Accessories" },
+  { name: "Home & Garden" },
+];
+
 export function ProductForm({
-  sellerId,
+  categoryOptions,
+  variant,
+  adminSellers,
   initialData,
   onSuccess,
 }: ProductFormProps) {
   const [loading, setLoading] = useState(false);
+  const [adminSellerId, setAdminSellerId] = useState(
+    () => adminSellers?.[0]?.id ?? "",
+  );
+
+  useEffect(() => {
+    if (variant === "admin" && adminSellers?.length) {
+      setAdminSellerId((prev) => {
+        if (prev && adminSellers.some((s) => s.id === prev)) return prev;
+        return adminSellers[0].id;
+      });
+    }
+  }, [variant, adminSellers]);
+
+  const categories =
+    categoryOptions.length > 0 ? categoryOptions : FALLBACK_CATEGORIES;
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(ProductFormSchema),
@@ -76,9 +102,19 @@ export function ProductForm({
   const onSubmit = async (values: ProductFormValues) => {
     const parsed = ProductFormSchema.parse(values);
 
+    if (variant === "admin" && !initialData?._id) {
+      if (!adminSellerId) {
+        toast.error("Select a seller for this product");
+        return;
+      }
+    }
+
     setLoading(true);
     try {
-      const payload = { ...parsed, sellerId };
+      const payload: Record<string, unknown> = { ...parsed };
+      if (variant === "admin" && !initialData?._id) {
+        payload.sellerId = adminSellerId;
+      }
 
       const result = initialData?._id
         ? await updateProduct(initialData._id, payload)
@@ -89,7 +125,15 @@ export function ProductForm({
         form.reset();
         onSuccess?.();
       } else {
-        toast.error(result.error || "Operation failed");
+        if ("errors" in result && result.errors) {
+          toast.error("Please fix validation errors");
+        } else {
+          toast.error(
+            "error" in result && result.error
+              ? String(result.error)
+              : "Operation failed",
+          );
+        }
       }
     } catch {
       toast.error("Unexpected error");
@@ -104,6 +148,29 @@ export function ProductForm({
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-4 max-h-[70vh] overflow-y-auto pr-2"
       >
+        {variant === "admin" && !initialData?._id && adminSellers?.length ? (
+          <div className="space-y-2">
+            <FormLabel>Seller</FormLabel>
+            <Select
+              value={adminSellerId}
+              onValueChange={(v) => {
+                if (v) setAdminSellerId(v);
+              }}
+            >
+              <SelectTrigger className="w-full max-w-md">
+                <SelectValue placeholder="Select seller" />
+              </SelectTrigger>
+              <SelectContent>
+                {adminSellers.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
+
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -126,7 +193,7 @@ export function ProductForm({
                 <FormLabel>Category</FormLabel>
                 <Select
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  value={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -134,10 +201,11 @@ export function ProductForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="electronics">Electronics</SelectItem>
-                    <SelectItem value="clothing">Clothing</SelectItem>
-                    <SelectItem value="home">Home & Garden</SelectItem>
-                    <SelectItem value="books">Books</SelectItem>
+                    {categories.map((c) => (
+                      <SelectItem key={c.name} value={c.name}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />

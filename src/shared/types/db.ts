@@ -4,17 +4,43 @@ export interface BaseModel {
   updatedAt: string;
 }
 
+export interface Address {
+  _id: string;
+  label: string;
+  fullName: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  phone?: string;
+  isDefault: boolean;
+}
+
 export interface User extends BaseModel {
   name: string;
   email: string;
   phone?: string;
+  avatar?: string;
   role: "customer" | "seller" | "admin";
   isVerified: boolean;
   isSoftDeleted: boolean;
+  addresses: Address[];
   wishlist: string[];
   savedCards: SavedCard[];
   loyaltyPoints: number;
   preferredLanguage: string;
+}
+
+export interface Review extends BaseModel {
+  userId: string;
+  productId: string;
+  orderId?: string;
+  rating: number;
+  title?: string;
+  comment?: string;
+  isVerifiedPurchase: boolean;
 }
 
 export interface SavedCard {
