@@ -92,7 +92,7 @@ export interface ProductDiscount {
 }
 
 export interface Order extends BaseModel {
-  userId: string;
+  userId?: string;
   items: OrderItem[];
   subtotal: number;
   tax: number;

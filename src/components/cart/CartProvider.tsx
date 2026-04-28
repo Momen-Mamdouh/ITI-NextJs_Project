@@ -41,8 +41,8 @@ type CartContextValue = {
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartLine[]>([]);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [items, setItems] = useState<CartLine[]>(() => readCartFromStorage());
+  const [isHydrated] = useState(true);
   const [user, setUser] = useState<SessionUser>(null);
   const pathname = usePathname();
   const didInitialCustomerSync = useRef(false);
@@ -56,10 +56,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     writeCartToStorage(next);
   }, []);
 
-  useEffect(() => {
-    setItems(readCartFromStorage());
-    setIsHydrated(true);
-  }, []);
+  const clearLocal = useCallback(() => {
+    persist([]);
+    if (user?.role === "customer") void saveCustomerCart([]);
+  }, [persist, user]);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,7 +74,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     };
   }, [pathname]);
 
-  // One-time: guest localStorage → DB merge, or load server cart (customers only)
   useEffect(() => {
     if (!isHydrated || !user || user.role !== "customer") {
       return;
@@ -97,15 +96,28 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     })();
   }, [isHydrated, user, persist]);
 
+  const hasClearedRef = useRef(false);
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const stripeSuccess = urlParams.get("stripe") === "success";
+    const orderId = urlParams.get("orderId");
+
+    if (stripeSuccess && orderId && !hasClearedRef.current) {
+      hasClearedRef.current = true;
+      clearLocal();
+      // Clean URL without triggering re-render
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [isHydrated, clearLocal]);
+
   const addItem = useCallback(
     (line: CartLine) => {
       const current = readCartFromStorage();
       const without = current.filter((i) => i.productId !== line.productId);
       const existing = current.find((i) => i.productId === line.productId);
-      const nextQty = Math.min(
-        999,
-        (existing?.quantity ?? 0) + line.quantity,
-      );
+      const nextQty = Math.min(999, (existing?.quantity ?? 0) + line.quantity);
       if (nextQty < 1) return;
       const next: CartLine = {
         ...line,
@@ -150,11 +162,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     [persist, user],
   );
 
-  const clearLocal = useCallback(() => {
-    persist([]);
-    if (user?.role === "customer") void saveCustomerCart([]);
-  }, [persist, user]);
-
   const syncToServer = useCallback(async () => {
     if (user?.role !== "customer") return;
     const local = readCartFromStorage();
@@ -176,10 +183,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   );
 
   const value = useMemo((): CartContextValue => {
-    const subtotal = items.reduce(
-      (s, i) => s + i.price * i.quantity,
-      0,
-    );
+    const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
     const itemCount = items.reduce((s, i) => s + i.quantity, 0);
     return {
       items,
@@ -208,9 +212,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setCartItems,
   ]);
 
-  return (
-    <CartContext.Provider value={value}>{children}</CartContext.Provider>
-  );
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
 export function useCart() {

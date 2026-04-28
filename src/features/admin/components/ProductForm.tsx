@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -45,12 +45,13 @@ const ProductFormSchema = z.object({
 });
 
 type ProductFormValues = z.input<typeof ProductFormSchema>;
+type ProductFormOutput = z.output<typeof ProductFormSchema>;
 
 interface ProductFormProps {
   categoryOptions: { name: string }[];
   variant: "admin" | "seller";
   adminSellers?: { id: string; label: string }[];
-  initialData?: Partial<ProductFormValues> & { _id?: string };
+  initialData?: Partial<ProductFormOutput> & { _id?: string };
   onSuccess?: () => void;
 }
 
@@ -69,23 +70,19 @@ export function ProductForm({
   onSuccess,
 }: ProductFormProps) {
   const [loading, setLoading] = useState(false);
-  const [adminSellerId, setAdminSellerId] = useState(
-    () => adminSellers?.[0]?.id ?? "",
-  );
 
-  useEffect(() => {
-    if (variant === "admin" && adminSellers?.length) {
-      setAdminSellerId((prev) => {
-        if (prev && adminSellers.some((s) => s.id === prev)) return prev;
-        return adminSellers[0].id;
-      });
-    }
-  }, [variant, adminSellers]);
+  const adminSellerId = useMemo(() => {
+    if (variant !== "admin" || !adminSellers?.length) return "";
+    // Keep existing selection if valid, otherwise default to first
+    const current = initialData?._id;
+    if (current && adminSellers.some((s) => s.id === current)) return current;
+    return adminSellers[0].id;
+  }, [variant, adminSellers, initialData?._id]);
 
   const categories =
     categoryOptions.length > 0 ? categoryOptions : FALLBACK_CATEGORIES;
 
-  const form = useForm<ProductFormValues>({
+  const form = useForm<ProductFormValues, unknown, ProductFormOutput>({
     resolver: zodResolver(ProductFormSchema),
     defaultValues: {
       name: initialData?.name || "",
@@ -99,20 +96,14 @@ export function ProductForm({
     },
   });
 
-  const onSubmit = async (values: ProductFormValues) => {
+  const onSubmit = async (values: ProductFormOutput) => {
     const parsed = ProductFormSchema.parse(values);
-
-    if (variant === "admin" && !initialData?._id) {
-      if (!adminSellerId) {
-        toast.error("Select a seller for this product");
-        return;
-      }
-    }
 
     setLoading(true);
     try {
       const payload: Record<string, unknown> = { ...parsed };
-      if (variant === "admin" && !initialData?._id) {
+
+      if (variant === "admin" && !initialData?._id && adminSellerId) {
         payload.sellerId = adminSellerId;
       }
 
@@ -148,17 +139,13 @@ export function ProductForm({
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-4 max-h-[70vh] overflow-y-auto pr-2"
       >
-        {variant === "admin" && !initialData?._id && adminSellers?.length ? (
+        {/* ✅ Seller Select - NOT inside FormField since sellerId is not in schema */}
+        {variant === "admin" && !initialData?._id && adminSellers?.length && (
           <div className="space-y-2">
-            <FormLabel>Seller</FormLabel>
-            <Select
-              value={adminSellerId}
-              onValueChange={(v) => {
-                if (v) setAdminSellerId(v);
-              }}
-            >
-              <SelectTrigger className="w-full max-w-md">
-                <SelectValue placeholder="Select seller" />
+            <FormLabel>Seller *</FormLabel>
+            <Select value={adminSellerId} onValueChange={() => {}} disabled>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a seller" />
               </SelectTrigger>
               <SelectContent>
                 {adminSellers.map((s) => (
@@ -168,8 +155,11 @@ export function ProductForm({
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              Seller is assigned automatically based on your role
+            </p>
           </div>
-        ) : null}
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           <FormField
@@ -191,10 +181,7 @@ export function ProductForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Category</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value}
-                >
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />

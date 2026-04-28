@@ -24,10 +24,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Plus, Edit, Power } from "lucide-react";
+import { MoreHorizontal, Plus, Edit } from "lucide-react";
 import { SellerProductForm } from "./SellerProductForm";
 import { toast } from "sonner";
 import { toggleSellerProductStatus } from "@/features/seller/seller-product-actions";
+import { cn } from "@/lib/utils";
 
 interface ProductDoc {
   _id: string;
@@ -142,12 +143,22 @@ export function SellerProductTable({
                     {product.isActive ? "Active" : "Inactive"}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">
+
+                <TableCell className="text-right align-top">
                   <DropdownMenu>
                     <DropdownMenuTrigger>
-                      <Button variant="ghost" size="icon">
+                      <button
+                        type="button"
+                        className={cn(
+                          "inline-flex items-center justify-center rounded-lg transition-all outline-none",
+                          "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                          "hover:bg-muted disabled:opacity-50",
+                          "size-8",
+                        )}
+                        aria-label="Open menu"
+                      >
                         <MoreHorizontal className="h-4 w-4" />
-                      </Button>
+                      </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <Dialog>
@@ -161,7 +172,7 @@ export function SellerProductTable({
                             <Edit className="mr-2 h-4 w-4" /> Edit
                           </DropdownMenuItem>
                         </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
+                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                           <DialogHeader>
                             <DialogTitle>Edit Product</DialogTitle>
                           </DialogHeader>
@@ -181,7 +192,6 @@ export function SellerProductTable({
                       <DropdownMenuItem
                         onClick={() => handleToggle(product._id)}
                       >
-                        <Power className="mr-2 h-4 w-4" />{" "}
                         {product.isActive ? "Deactivate" : "Activate"}
                       </DropdownMenuItem>
                     </DropdownMenuContent>

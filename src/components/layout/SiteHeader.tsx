@@ -101,14 +101,16 @@ export function SiteHeader() {
             </>
           ) : user.role === "customer" ? (
             <DropdownMenu>
-              <DropdownMenuTrigger>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className="btn-interactive"
-                >
-                  <User className="h-4 w-4" />
-                </Button>
+              <DropdownMenuTrigger
+                aria-label="Account menu"
+                className={cn(
+                  "inline-flex items-center justify-center rounded-lg transition-all outline-none",
+                  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                  "hover:bg-muted disabled:opacity-50",
+                  "size-7", // matches icon-sm
+                )}
+              >
+                <User className="size-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem>

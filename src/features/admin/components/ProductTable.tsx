@@ -159,13 +159,24 @@ export function ProductTable({
                 <TableCell className="font-medium align-top">
                   <div className="flex items-start gap-3 max-w-55">
                     {product.images[0] ? (
-                      <Image
-                        src={product.images[0]}
-                        alt={product.name}
-                        width={44}
-                        height={44}
-                        className="rounded-md object-cover shrink-0"
-                      />
+                      product.images[0].startsWith("http") &&
+                      !product.images[0].includes("cloudinary.com") ? (
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="object-cover"
+                          width={200}
+                          height={200}
+                        />
+                      ) : (
+                        <Image
+                          src={product.images[0]}
+                          alt={product.name}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                        />
+                      )
                     ) : (
                       <div className="size-11 shrink-0 rounded-md bg-muted" />
                     )}
@@ -215,16 +226,24 @@ export function ProductTable({
                     {product.isActive ? "Active" : "Inactive"}
                   </Badge>
                 </TableCell>
+
                 <TableCell className="text-right align-top">
                   <DropdownMenu>
                     <DropdownMenuTrigger>
-                      <Button
-                        variant="ghost"
-                        size="icon"
+                      {/* Use plain button element to avoid nested <button> */}
+                      <button
+                        type="button"
+                        className={cn(
+                          "inline-flex items-center justify-center rounded-lg transition-all outline-none",
+                          "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                          "hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed",
+                          "size-8",
+                        )}
                         disabled={loadingId === product._id}
+                        aria-label="Open menu"
                       >
                         <MoreHorizontal className="h-4 w-4" />
-                      </Button>
+                      </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <Dialog>
