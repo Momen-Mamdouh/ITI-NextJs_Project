@@ -3,6 +3,7 @@ import { Providers } from "@/store/provider";
 import { CartProvider } from "@/components/cart/CartProvider";
 import { WishlistProvider } from "@/components/wishlist/WishlistProvider";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -19,19 +20,25 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className="min-h-screen bg-background text-foreground antialiased"
+        className="min-h-screen bg-background text-foreground antialiased theme-transition"
         suppressHydrationWarning
       >
-        <Providers>
-          <CartProvider>
-            <WishlistProvider>
-              <SiteHeader />
-              {children}
-            </WishlistProvider>
-          </CartProvider>
-        </Providers>
-
-        <Toaster richColors position="top-right" />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange={false}
+        >
+          <Providers>
+            <CartProvider>
+              <WishlistProvider>
+                <SiteHeader />
+                <main className="min-h-[calc(100vh-4rem)]">{children}</main>
+              </WishlistProvider>
+            </CartProvider>
+          </Providers>
+          <Toaster richColors position="top-right" />
+        </ThemeProvider>
       </body>
     </html>
   );

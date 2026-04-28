@@ -41,7 +41,7 @@ export function LoginForm({ redirectTo }: { redirectTo?: string | null }) {
       const role = result.user?.role;
 
       if (role === "admin") {
-        router.push("/admin"); // ← Changed from /admin/users
+        router.push("/admin");
       } else if (role === "seller") {
         router.push("/seller");
       } else {

@@ -1,62 +1,82 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, User, Store } from "lucide-react";
+import { ShoppingCart, User, Store, LogOut } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/components/cart/CartProvider";
 import { Logo } from "@/shared/components/Logo";
 import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { logoutUser } from "@/features/auth/actions";
 
 export function SiteHeader() {
   const { itemCount, isHydrated, user } = useCart();
 
-  return (
-    <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <div className="flex min-w-0 items-center gap-6 md:gap-10">
-          <Link href="/" className="shrink-0">
-            <Logo className="h-6" />
-          </Link>
-          <nav className="hidden items-center gap-5 text-sm text-muted-foreground sm:flex">
-            <Link href="/" className="hover:text-foreground transition-colors">
-              Shop
-            </Link>
-            {user?.role === "customer" && (
-              <Link
-                href="/account"
-                className="hover:text-foreground transition-colors"
-              >
-                My account
-              </Link>
-            )}
-            {user && (user.role === "seller" || user.role === "admin") && (
-              <Link
-                href={user.role === "admin" ? "/admin" : "/seller"}
-                className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
-              >
-                <Store className="size-4" />
-                Dashboard
-              </Link>
-            )}
-          </nav>
-        </div>
+  const router = useRouter();
+  const handleSignOut = async () => {
+    await logoutUser();
+    router.push("/auth/login");
+    router.refresh();
+  };
 
-        <div className="flex shrink-0 items-center gap-2">
+  return (
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+      <div className="container flex h-16 items-center justify-between px-4">
+        <Link href="/" className="flex items-center gap-2">
+          <Logo className="text-foreground" />
+        </Link>
+
+        <nav className="hidden md:flex items-center gap-6">
+          <Link
+            href="/"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Shop
+          </Link>
+          {user?.role === "customer" && (
+            <Link
+              href="/account"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              My Account
+            </Link>
+          )}
+          {user && (user.role === "seller" || user.role === "admin") && (
+            <Link
+              href={user.role === "admin" ? "/admin" : "/seller"}
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Dashboard
+            </Link>
+          )}
+        </nav>
+
+        <div className="flex items-center gap-2">
+          <ThemeToggle variant="ghost" size="icon-sm" />
+
           {(!user || user.role === "customer") && (
             <Link
               href="/cart"
               className={cn(
                 buttonVariants({ variant: "outline", size: "sm" }),
-                "relative inline-flex gap-1.5",
+                "relative inline-flex gap-1.5 btn-interactive",
               )}
             >
-              <ShoppingCart className="size-4" />
+              <ShoppingCart className="h-4 w-4" />
               <span className="hidden sm:inline">Cart</span>
               {isHydrated && itemCount > 0 && (
                 <Badge
                   variant="default"
-                  className="ms-0.5 h-5 min-w-5 px-1 text-xs"
+                  className="absolute -top-1 -right-1 h-5 min-w-5 px-1 text-xs"
                 >
                   {itemCount > 99 ? "99+" : itemCount}
                 </Badge>
@@ -64,7 +84,7 @@ export function SiteHeader() {
             </Link>
           )}
 
-          {!user && (
+          {!user ? (
             <>
               <Link
                 href="/auth/login"
@@ -79,19 +99,56 @@ export function SiteHeader() {
                 Register
               </Link>
             </>
-          )}
-
-          {user && user.role === "customer" && (
+          ) : user.role === "customer" ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="btn-interactive"
+                >
+                  <User className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem>
+                  <Link href="/account/profile">Profile</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Link href="/account/orders">Orders</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Link href="/account/wishlist">Wishlist</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Link href="/api/auth/logout">Sign out</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
             <Link
-              href="/account/profile"
-              title="Account"
-              className={buttonVariants({
-                variant: "ghost",
-                size: "icon-sm",
-              })}
+              href={user.role === "admin" ? "/admin" : "/seller"}
+              className={cn(
+                buttonVariants({ variant: "default", size: "sm" }),
+                "gap-1 btn-interactive",
+              )}
             >
-              <User className="size-4" />
+              <Store className="h-4 w-4" />
+              {user.role === "admin" ? "Admin" : "Seller"}
             </Link>
+          )}
+          {user ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSignOut}
+              className="gap-1.5"
+            >
+              <LogOut className="size-4" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </Button>
+          ) : (
+            <></>
           )}
         </div>
       </div>
