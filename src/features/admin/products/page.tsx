@@ -12,7 +12,7 @@ function mergeCategoryNames(
   a: string[] | undefined,
   b: string[] | undefined,
 ): { name: string }[] {
-  const set = new Set<string>([...(a ?? []), ...(b ?? [])]);
+  const set = new Set([...(a ?? []), ...(b ?? [])]);
   return [...set].sort((x, y) => x.localeCompare(y)).map((name) => ({ name }));
 }
 
@@ -25,13 +25,11 @@ export default async function AdminProductsPage() {
     const seller = await SellerModel.findOne({ userId: session.id })
       .select("_id")
       .lean();
-    sellerMongoId = seller?._id.toString();
+    sellerMongoId = seller?._id?.toString();
   }
 
   const [productsResult, activeCats, productCats] = await Promise.all([
-    fetchProducts({
-      sellerId: sellerMongoId,
-    }),
+    fetchProducts({ sellerId: sellerMongoId }),
     fetchActiveCategoryNames(),
     fetchProductCategoryNames(),
   ]);
@@ -51,7 +49,7 @@ export default async function AdminProductsPage() {
       .sort({ storeName: 1 })
       .lean();
     adminSellers = sellers.map((s) => ({
-      id: String(s._id),
+      id: s._id?.toString() || "",
       label: String(s.storeName),
     }));
   }

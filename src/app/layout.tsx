@@ -37,7 +37,7 @@ export default function RootLayout({
               </WishlistProvider>
             </CartProvider>
           </Providers>
-          <Toaster richColors position="top-right" />
+          <Toaster richColors position="bottom-right" />
         </ThemeProvider>
       </body>
     </html>

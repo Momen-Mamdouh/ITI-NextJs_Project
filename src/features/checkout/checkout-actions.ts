@@ -52,9 +52,7 @@ async function getOptionalSession() {
   }
 }
 
-async function validateCartItems(
-  items: z.infer<typeof CartItemSchema>[],
-) {
+async function validateCartItems(items: z.infer<typeof CartItemSchema>[]) {
   const orderItems: {
     productId: string;
     sellerId: string;
@@ -108,6 +106,7 @@ function computeTotals(subtotal: number) {
 
 export async function placeOrder(rawData: unknown) {
   const validated = PlaceOrderSchema.safeParse(rawData);
+
   if (!validated.success) {
     return {
       success: false,
@@ -155,7 +154,10 @@ export async function placeOrder(rawData: unknown) {
       paymentStatus: "pending",
       shippingAddress,
       guestEmail: guestEmail || undefined,
-      statusHistory: [{ status: "pending", note: "Order created – awaiting Stripe payment" }],
+      guestName: guestName,
+      statusHistory: [
+        { status: "pending", note: "Order created – awaiting Stripe payment" },
+      ],
       notes: notes || undefined,
     });
 
@@ -194,8 +196,7 @@ export async function placeOrder(rawData: unknown) {
       });
     }
 
-    const origin =
-      process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const origin = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: lineItems,
@@ -207,7 +208,10 @@ export async function placeOrder(rawData: unknown) {
     await OrderModel.findByIdAndUpdate(order._id, {
       stripeSessionId: checkoutSession.id,
     });
-
+    if (userId) {
+      // Clear cart immediately (not just in webhook)
+      await UserModel.findByIdAndUpdate(userId, { $set: { cartItems: [] } });
+    }
     return {
       success: true,
       orderId: String(order._id),
@@ -230,7 +234,9 @@ export async function placeOrder(rawData: unknown) {
     paymentStatus,
     shippingAddress,
     guestEmail: guestEmail || undefined,
-    statusHistory: [{ status: "pending", note: "Order placed (Cash on Delivery)" }],
+    statusHistory: [
+      { status: "pending", note: "Order placed (Cash on Delivery)" },
+    ],
     notes: notes || undefined,
   });
 
@@ -251,7 +257,11 @@ export async function placeOrder(rawData: unknown) {
       orderId: String(order._id),
       status: "pending",
       totalAmount,
-      items: orderItems.map((i) => ({ name: i.name, quantity: i.quantity, price: i.price })),
+      items: orderItems.map((i) => ({
+        name: i.name,
+        quantity: i.quantity,
+        price: i.price,
+      })),
       shippingAddress: {
         fullName: shippingAddress.fullName,
         city: shippingAddress.city,
