@@ -7,7 +7,9 @@ import ProductModel from "@/features/products/models/product.model";
 import UserModel from "@/features/user/models/user.model";
 import { sendOrderConfirmationEmail } from "@/lib/mailer";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2026-03-25.dahlia",
+});
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -25,20 +27,19 @@ export async function POST(request: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET,
     );
   } catch {
-    return NextResponse.json(
-      { error: "Invalid signature" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
+
+  await dbConnect();
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const orderId = session.metadata?.orderId;
+
     if (!orderId) {
       return NextResponse.json({ received: true });
     }
 
-    await dbConnect();
     const order = await OrderModel.findById(orderId);
     if (!order || order.paymentStatus === "paid") {
       return NextResponse.json({ received: true });
@@ -50,6 +51,7 @@ export async function POST(request: NextRequest) {
     order.statusHistory.push({
       status: "processing",
       note: "Payment confirmed via Stripe",
+      createdAt: new Date(),
     });
     await order.save();
 
@@ -67,7 +69,9 @@ export async function POST(request: NextRequest) {
 
     let customerEmail: string | null = order.guestEmail || null;
     if (!customerEmail && order.userId) {
-      const user = await UserModel.findById(order.userId).select("email").lean();
+      const user = await UserModel.findById(order.userId)
+        .select("email")
+        .lean();
       customerEmail = (user as { email?: string } | null)?.email ?? null;
     }
 
@@ -77,11 +81,13 @@ export async function POST(request: NextRequest) {
         orderId: String(order._id),
         status: "processing",
         totalAmount: order.totalAmount,
-        items: order.items.map((i: { name: string; quantity: number; price: number }) => ({
-          name: i.name,
-          quantity: i.quantity,
-          price: i.price,
-        })),
+        items: order.items.map(
+          (i: { name: string; quantity: number; price: number }) => ({
+            name: i.name,
+            quantity: i.quantity,
+            price: i.price,
+          }),
+        ),
         shippingAddress: order.shippingAddress
           ? {
               fullName: order.shippingAddress.fullName,
@@ -89,9 +95,34 @@ export async function POST(request: NextRequest) {
               country: order.shippingAddress.country,
             }
           : undefined,
-      }).catch(() => {});
+      }).catch((err) => console.error("Email send failed:", err));
     }
+  }
+
+  if (
+    event.type === "checkout.session.expired" ||
+    event.type === "payment_intent.payment_failed"
+  ) {
+    const sessionId = (
+      event.data.object as Stripe.Checkout.Session | Stripe.PaymentIntent
+    ).id;
+    await OrderModel.findOneAndUpdate(
+      { stripeSessionId: sessionId },
+      {
+        paymentStatus: "failed",
+        status: "cancelled",
+        $push: {
+          statusHistory: {
+            status: "cancelled",
+            note: "Payment failed or session expired",
+            createdAt: new Date(),
+          },
+        },
+      },
+    );
   }
 
   return NextResponse.json({ received: true });
 }
+
+export const config = { api: { bodyParser: false } };

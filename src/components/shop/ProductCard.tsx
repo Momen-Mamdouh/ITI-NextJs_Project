@@ -88,26 +88,36 @@ export function ProductCard({ product }: { product: ProductView }) {
     <Card className="overflow-hidden">
       <div className="relative aspect-square bg-muted">
         {image ? (
-          <Image
-            src={image}
-            alt={product.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-          />
+          image.startsWith("http") && !image.includes("cloudinary.com") ? (
+            <img
+              src={image}
+              alt={product.name}
+              className="object-cover"
+              width={200}
+              height={200}
+            />
+          ) : (
+            <Image
+              src={image}
+              alt={product.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            />
+          )
         ) : (
           <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
             No image
           </div>
         )}
-        <Badge className="absolute start-2 top-2 z-10" variant="secondary">
+        <Badge className="absolute inset-s-2 top-2 z-10" variant="secondary">
           {product.category}
         </Badge>
         <Button
           type="button"
           variant="secondary"
           size="icon-sm"
-          className="absolute end-2 top-2 z-10 size-9 rounded-full shadow-sm"
+          className="absolute inset-e-2 top-2 z-10 size-9 rounded-full shadow-sm"
           disabled={wishPending}
           onClick={(e) => {
             e.preventDefault();
@@ -117,10 +127,7 @@ export function ProductCard({ product }: { product: ProductView }) {
           aria-pressed={inWishlist}
         >
           <Heart
-            className={cn(
-              "size-4",
-              inWishlist && "fill-red-500 text-red-500",
-            )}
+            className={cn("size-4", inWishlist && "fill-red-500 text-red-500")}
           />
         </Button>
       </div>
