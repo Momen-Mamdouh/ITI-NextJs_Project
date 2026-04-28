@@ -111,7 +111,7 @@ export function ProductTable({
             placeholder="Search name, category, description…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="max-w-xs min-w-[200px]"
+            className="max-w-xs min-w-50"
           />
           <Button type="button" onClick={() => setCreateOpen(true)}>
             Create Product
@@ -142,7 +142,7 @@ export function ProductTable({
           <TableHeader>
             <TableRow>
               <TableHead>Product</TableHead>
-              <TableHead className="min-w-[200px]">Description</TableHead>
+              <TableHead className="min-w-50">Description</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Stock</TableHead>
@@ -157,7 +157,7 @@ export function ProductTable({
                 className={!product.isActive ? "bg-muted/20" : ""}
               >
                 <TableCell className="font-medium align-top">
-                  <div className="flex items-start gap-3 max-w-[220px]">
+                  <div className="flex items-start gap-3 max-w-55">
                     {product.images[0] ? (
                       <Image
                         src={product.images[0]}
@@ -194,7 +194,9 @@ export function ProductTable({
                             ? "secondary"
                             : "default"
                     }
-                    className={cn(product.stock <= 0 && "text-muted-foreground")}
+                    className={cn(
+                      product.stock <= 0 && "text-muted-foreground",
+                    )}
                   >
                     {product.stock <= 0
                       ? "Out of stock"

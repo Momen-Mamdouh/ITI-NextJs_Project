@@ -65,6 +65,7 @@ src/app/account/wishlist/page.tsx
 src/app/admin/categories/page.tsx
 src/app/admin/layout.tsx
 src/app/admin/orders/page.tsx
+src/app/admin/page.tsx
 src/app/admin/products/page.tsx
 src/app/admin/promos/page.tsx
 src/app/admin/users/page.tsx
@@ -858,6 +859,118 @@ import AdminOrdersPage from "@/features/admin/orders/page";
 export default AdminOrdersPage;
 </file>
 
+<file path="src/app/admin/page.tsx">
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Users,
+  Package,
+  ShoppingCart,
+  FileText,
+  TrendingUp,
+} from "lucide-react";
+import Link from "next/link";
+
+const quickLinks = [
+  {
+    href: "/admin/users",
+    title: "User Management",
+    description: "Approve, restrict, or manage user accounts",
+    icon: Users,
+    color: "text-blue-600",
+  },
+  {
+    href: "/admin/products",
+    title: "Products",
+    description: "Manage product listings and inventory",
+    icon: Package,
+    color: "text-green-600",
+  },
+  {
+    href: "/admin/orders",
+    title: "Orders",
+    description: "Track and update order status",
+    icon: ShoppingCart,
+    color: "text-purple-600",
+  },
+  {
+    href: "/admin/promos",
+    title: "Promo Codes",
+    description: "Create and manage discount campaigns",
+    icon: FileText,
+    color: "text-orange-600",
+  },
+];
+
+const stats = [
+  { label: "Total Users", value: "—", trend: "+0%", icon: Users },
+  { label: "Active Products", value: "—", trend: "0", icon: Package },
+  { label: "Pending Orders", value: "—", trend: "0", icon: ShoppingCart },
+  { label: "Revenue (30d)", value: "$0.00", trend: "+0%", icon: TrendingUp },
+];
+
+export default function Admin() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
+        <p className="text-muted-foreground">Manage your e-commerce platform</p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <Card key={stat.label}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                {stat.label}
+              </CardTitle>
+              <stat.icon className={`h-4 w-4 ${stat.icon}`} />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <p className="text-xs text-muted-foreground">
+                {stat.trend} from last period
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {quickLinks.map((link) => (
+            <Link key={link.href} href={link.href}>
+              <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
+                <CardHeader className="pb-2">
+                  <link.icon className={`h-5 w-5 ${link.color} mb-2`} />
+                  <CardTitle className="text-base">{link.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    {link.description}
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Recent Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground text-center py-8">
+            Activity feed will appear here
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+</file>
+
 <file path="src/app/admin/products/page.tsx">
 import AdminProductsPage from "@/features/admin/products/page";
 
@@ -1192,12 +1305,15 @@ export async function GET() {
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-hover: oklch(0.95 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --hover-elevation: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --focus-ring: 0 0 0 2px var(--ring);
 }
 
 @theme inline {
@@ -1289,6 +1405,9 @@ body {
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-accent-hover: oklch(0.3 0 0);
+
+  --hover-elevation: 0 4px 12px 0 rgb(0 0 0 / 0.15);
 }
 
 @layer base {
@@ -1300,6 +1419,28 @@ body {
   }
   html {
     @apply font-sans;
+  }
+}
+
+@layer components {
+  .btn-interactive {
+    @apply transition-all duration-200 ease-in-out 
+           hover:shadow-md active:scale-[0.98]
+           focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+
+  .card-interactive {
+    @apply transition-all duration-300 
+           hover:shadow-lg hover:-translate-y-0.5
+           border-border/50 hover:border-border;
+  }
+
+  .nav-item {
+    @apply relative overflow-hidden 
+           before:absolute before:inset-0 before:bg-gradient-to-r 
+           before:from-primary/0 before:to-primary/10 
+           before:opacity-0 before:transition-opacity before:duration-300
+           hover:before:opacity-100;
   }
 }
 </file>
@@ -12049,50 +12190,6 @@ export function ProductTable({
 }
 </file>
 
-<file path="src/features/admin/components/Sidebar.tsx">
-import Link from "next/link";
-import {
-  Users,
-  Package,
-  ShoppingCart,
-  FileText,
-  Settings,
-  FolderTree,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-
-const navItems = [
-  { href: "/admin/users", icon: Users, label: "Users" },
-  { href: "/admin/products", icon: Package, label: "Products" },
-  { href: "/admin/categories", icon: FolderTree, label: "Categories" },
-  { href: "/admin/orders", icon: ShoppingCart, label: "Orders" },
-  { href: "/admin/promos", icon: FileText, label: "Promos" },
-  { href: "/admin/settings", icon: Settings, label: "Settings" },
-];
-
-export function Sidebar() {
-  return (
-    <aside className="w-64 bg-background border-r h-screen sticky top-0 p-4">
-      <div className="font-bold text-xl mb-6 px-2">Admin Panel</div>
-      <nav className="space-y-1">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted transition-colors",
-            )}
-          >
-            <item.icon className="h-4 w-4" />
-            <span>{item.label}</span>
-          </Link>
-        ))}
-      </nav>
-    </aside>
-  );
-}
-</file>
-
 <file path="src/features/admin/products/page.tsx">
 import {
   fetchProducts,
@@ -12251,120 +12348,6 @@ export async function refreshAuthSession() {
   } catch {
     return { success: false, error: "Session expired" };
   }
-}
-</file>
-
-<file path="src/features/auth/components/LoginForm.tsx">
-"use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, type ControllerRenderProps } from "react-hook-form";
-import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { loginUser } from "@/features/auth/actions";
-import { LoginSchema } from "@/lib/auth-schemas";
-
-function safePath(next: string | undefined | null): string | null {
-  if (!next || !next.startsWith("/") || next.startsWith("//")) return null;
-  return next;
-}
-
-export function LoginForm({ redirectTo }: { redirectTo?: string | null }) {
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-
-  const form = useForm<z.infer<typeof LoginSchema>>({
-    resolver: zodResolver(LoginSchema),
-    defaultValues: { email: "", password: "" },
-  });
-
-  async function onSubmit(values: z.infer<typeof LoginSchema>) {
-    setLoading(true);
-    setError(null);
-    const result = await loginUser(values);
-    if (result.success) {
-      const u = result.user;
-      if (u?.role === "admin") router.push("/admin");
-      else if (u?.role === "seller") router.push("/seller");
-      else {
-        const sp = safePath(redirectTo);
-        if (u?.role === "customer" && sp) router.push(sp);
-        else router.push("/");
-      }
-      router.refresh();
-    } else {
-      setError(
-        Object.values(result.errors || {})
-          .flat()
-          .join(", "),
-      );
-    }
-    setLoading(false);
-  }
-
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        <FormField
-          control={form.control}
-          name="email"
-          render={({
-            field,
-          }: {
-            field: ControllerRenderProps<z.infer<typeof LoginSchema>, "email">;
-          }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input type="email" placeholder="you@example.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({
-            field,
-          }: {
-            field: ControllerRenderProps<
-              z.infer<typeof LoginSchema>,
-              "password"
-            >;
-          }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Signing in..." : "Sign in"}
-        </Button>
-      </form>
-    </Form>
-  );
 }
 </file>
 
@@ -13766,44 +13749,22 @@ export default mongoose.models.User || mongoose.model("User", userSchema);
 </file>
 
 <file path="src/lib/db.ts">
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.DATABASE_URL || "";
-
-if (!MONGODB_URI) {
-  throw new Error("DATABASE_URL is not defined");
-}
-
-type Cached = {
-  conn: typeof mongoose | null;
-  promise: Promise<typeof mongoose> | null;
+type ConnectionObject = {
+  isConnected?: number;
 };
 
-// @ts-expect-error
-const cached: Cached = global.mongoose || { conn: null, promise: null };
+const connection: ConnectionObject = {};
 
-async function dbConnect(): Promise<typeof mongoose> {
-  if (cached.conn) {
-    return cached.conn;
-  }
-
-  if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI).then((mongoose) => mongoose);
-  }
-
+async function dbConnect(): Promise<void> {
+  if (connection.isConnected) return;
   try {
-    cached.conn = await cached.promise;
-  } catch (err) {
-    cached.promise = null;
-    console.error("MongoDB connection error:", err);
-    throw err;
+    await mongoose.connect(process.env.DATABASE_URL || "");
+    connection.isConnected = mongoose.connection.readyState;
+  } catch {
+    throw new Error("Database connection failed");
   }
-
-  // @ts-expect-error
-  global.mongoose = cached;
-
-  return cached.conn;
 }
 
 export default dbConnect;
@@ -14091,39 +14052,213 @@ export function Providers({ children }: { children: React.ReactNode }) {
 }
 </file>
 
-<file path="src/app/layout.tsx">
-import type { Metadata } from "next";
-import { Providers } from "@/store/provider";
-import { CartProvider } from "@/components/cart/CartProvider";
-import { WishlistProvider } from "@/components/wishlist/WishlistProvider";
-import { SiteHeader } from "@/components/layout/SiteHeader";
-import "./globals.css";
-import { Toaster } from "@/components/ui/sonner";
+<file path="src/features/admin/components/Sidebar.tsx">
+"use client";
 
-export const metadata: Metadata = {
-  title: "E-Commerce Platform",
-  description: "Multi-role marketplace",
-};
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  Users,
+  Package,
+  ShoppingCart,
+  FileText,
+  Settings,
+  FolderTree,
+  LayoutDashboard,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+const navItems = [
+  { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/admin/users", icon: Users, label: "Users" },
+  { href: "/admin/products", icon: Package, label: "Products" },
+  { href: "/admin/categories", icon: FolderTree, label: "Categories" },
+  { href: "/admin/orders", icon: ShoppingCart, label: "Orders" },
+  { href: "/admin/promos", icon: FileText, label: "Promos" },
+  { href: "/admin/settings", icon: Settings, label: "Settings" },
+];
+
+export function Sidebar() {
+  const pathname = usePathname();
+
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-background text-foreground antialiased" suppressHydrationWarning>
-        <Providers>
-          <CartProvider>
-            <WishlistProvider>
-              <SiteHeader />
-              {children}
-            </WishlistProvider>
-          </CartProvider>
-        </Providers>
-        <Toaster richColors position="top-right" />
-      </body>
-    </html>
+    <aside className="w-64 bg-sidebar border-r border-sidebar-border h-screen sticky top-0 flex flex-col">
+      <div className="p-4 border-b border-sidebar-border">
+        <h1 className="font-bold text-lg text-sidebar-foreground">
+          Admin Panel
+        </h1>
+        <p className="text-xs text-sidebar-foreground/70">
+          Manage your platform
+        </p>
+      </div>
+
+      <nav className="flex-1 overflow-y-auto p-2 space-y-1">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            pathname === item.href ||
+            (item.href !== "/admin" && pathname?.startsWith(item.href));
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium",
+                "text-sidebar-foreground/80 hover:text-sidebar-foreground",
+                "hover:bg-sidebar-accent hover:bg-opacity-50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "transition-all duration-200 ease-in-out",
+                "active:scale-[0.98]",
+                isActive && [
+                  "bg-sidebar-accent text-sidebar-foreground font-semibold",
+                  "border-l-2 border-primary pl-2.5",
+                  "shadow-sm",
+                ],
+                !isActive && "hover:translate-x-0.5",
+              )}
+            >
+              <Icon
+                className={cn(
+                  "h-4 w-4 transition-transform duration-200",
+                  isActive ? "text-primary" : "group-hover:scale-110",
+                )}
+              />
+              <span className="truncate">{item.label}</span>
+              {isActive && (
+                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Footer */}
+      <div className="p-3 border-t border-sidebar-border bg-sidebar/50">
+        <div className="flex items-center gap-2 text-xs text-sidebar-foreground/60">
+          <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+          <span>System operational</span>
+        </div>
+      </div>
+    </aside>
+  );
+}
+</file>
+
+<file path="src/features/auth/components/LoginForm.tsx">
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, type ControllerRenderProps } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { loginUser } from "@/features/auth/actions";
+import { LoginSchema } from "@/lib/auth-schemas";
+
+function safePath(next: string | undefined | null): string | null {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) return null;
+  return next;
+}
+
+export function LoginForm({ redirectTo }: { redirectTo?: string | null }) {
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const form = useForm<z.infer<typeof LoginSchema>>({
+    resolver: zodResolver(LoginSchema),
+    defaultValues: { email: "", password: "" },
+  });
+
+  async function onSubmit(values: z.infer<typeof LoginSchema>) {
+    setLoading(true);
+    setError(null);
+    const result = await loginUser(values);
+    if (result.success) {
+      const role = result.user?.role;
+
+      if (role === "admin") {
+        router.push("/admin"); // ← Changed from /admin/users
+      } else if (role === "seller") {
+        router.push("/seller");
+      } else {
+        const sp = safePath(redirectTo);
+        if (role === "customer" && sp) router.push(sp);
+        else router.push("/");
+      }
+
+      router.refresh();
+    } else {
+      setError(
+        Object.values(result.errors || {})
+          .flat()
+          .join(", "),
+      );
+    }
+    setLoading(false);
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        <FormField
+          control={form.control}
+          name="email"
+          render={({
+            field,
+          }: {
+            field: ControllerRenderProps<z.infer<typeof LoginSchema>, "email">;
+          }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="you@example.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="password"
+          render={({
+            field,
+          }: {
+            field: ControllerRenderProps<
+              z.infer<typeof LoginSchema>,
+              "password"
+            >;
+          }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="••••••••" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "Signing in..." : "Sign in"}
+        </Button>
+      </form>
+    </Form>
   );
 }
 </file>
@@ -14666,6 +14801,47 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ received: true });
+}
+</file>
+
+<file path="src/app/layout.tsx">
+import type { Metadata } from "next";
+import { Providers } from "@/store/provider";
+import { CartProvider } from "@/components/cart/CartProvider";
+import { WishlistProvider } from "@/components/wishlist/WishlistProvider";
+import { SiteHeader } from "@/components/layout/SiteHeader";
+import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
+
+export const metadata: Metadata = {
+  title: "E-Commerce Platform",
+  description: "Multi-role marketplace",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className="min-h-screen bg-background text-foreground antialiased"
+        suppressHydrationWarning
+      >
+        <Providers>
+          <CartProvider>
+            <WishlistProvider>
+              <SiteHeader />
+              {children}
+            </WishlistProvider>
+          </CartProvider>
+        </Providers>
+
+        <Toaster richColors position="top-right" />
+      </body>
+    </html>
+  );
 }
 </file>
 

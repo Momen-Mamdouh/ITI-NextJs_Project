@@ -4,6 +4,7 @@ import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider as ReduxProvider } from "react-redux";
 import { store } from "@/store/store";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 
 function makeQueryClient() {
   return new QueryClient({
@@ -18,10 +19,11 @@ function makeQueryClient() {
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(makeQueryClient);
-
   return (
-    <QueryClientProvider client={queryClient}>
-      <ReduxProvider store={store}>{children}</ReduxProvider>
-    </QueryClientProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <QueryClientProvider client={queryClient}>
+        <ReduxProvider store={store}>{children}</ReduxProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
