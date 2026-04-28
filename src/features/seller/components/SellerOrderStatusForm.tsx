@@ -73,7 +73,7 @@ export function SellerOrderStatusForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>New Status</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue />

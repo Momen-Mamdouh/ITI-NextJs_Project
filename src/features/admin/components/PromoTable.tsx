@@ -75,11 +75,13 @@ export function PromoTable({ promos }: { promos: PromoDoc[] }) {
             className="border rounded px-3 py-2 text-sm"
           />
           <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" /> Add Promo
-              </Button>
-            </DialogTrigger>
+            <DialogTrigger
+              render={
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" /> Add Promo
+                </Button>
+              }
+            />
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Create New Promo</DialogTitle>
@@ -129,7 +131,7 @@ export function PromoTable({ promos }: { promos: PromoDoc[] }) {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {new Date(promo.endDate).toLocaleDateString()}
+                  {new Date(promo.endDate).toLocaleDateString("en-US")}
                 </TableCell>
                 <TableCell>
                   <Badge
@@ -146,16 +148,21 @@ export function PromoTable({ promos }: { promos: PromoDoc[] }) {
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger
-                      aria-label="Account menu"
-                      className={cn(
-                        "inline-flex items-center justify-center rounded-lg transition-all outline-none",
-                        "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                        "hover:bg-muted disabled:opacity-50",
-                        "size-7", // matches icon-sm
-                      )}
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </DropdownMenuTrigger>
+                      render={
+                        <button
+                          type="button"
+                          aria-label="Open menu"
+                          className={cn(
+                            "inline-flex items-center justify-center rounded-lg transition-all outline-none",
+                            "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                            "hover:bg-muted disabled:opacity-50",
+                            "size-7",
+                          )}
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </button>
+                      }
+                    />
 
                     <DropdownMenuContent align="end">
                       <Dialog>

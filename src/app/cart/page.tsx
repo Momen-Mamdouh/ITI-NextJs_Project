@@ -63,6 +63,11 @@ export default function CartPage() {
       toast.error("Your cart is empty");
       return;
     }
+    if (!user) {
+      toast.info("Please sign in to proceed to checkout");
+      router.push("/auth/login?next=/checkout");
+      return;
+    }
     router.push("/checkout");
   };
 
@@ -350,19 +355,19 @@ export default function CartPage() {
                 </CardContent>
               </Card>
 
-              {/* Guest Notice */}
+              {/* Sign-in Notice */}
               {!user && (
                 <Card className="bg-muted/30">
                   <CardContent className="py-4 text-center text-sm">
                     <p className="text-muted-foreground">
-                      You can checkout as a guest, or{" "}
+                      Please{" "}
                       <Link
                         href="/auth/login?next=/checkout"
                         className="text-primary underline"
                       >
                         sign in
                       </Link>{" "}
-                      to track orders and save your cart.
+                      to proceed to checkout and track your orders.
                     </p>
                   </CardContent>
                 </Card>

@@ -15,6 +15,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getOrderConfirmation } from "@/features/checkout/checkout-actions";
 import { OrderTimeline } from "@/components/order/OrderTimeline";
+import type { Metadata } from "next";
 
 const PAYMENT_LABELS: Record<string, string> = {
   stripe: "Credit / Debit Card",
@@ -25,6 +26,10 @@ const PAYMENT_LABELS: Record<string, string> = {
 interface Props {
   params: Promise<{ id: string }>;
 }
+
+export const metadata: Metadata = {
+  title: "Order confirmation",
+};
 
 export default async function OrderConfirmationPage({ params }: Props) {
   const { id } = await params;
@@ -155,27 +160,6 @@ export default async function OrderConfirmationPage({ params }: Props) {
               trackingNumber={order.trackingNumber}
               carrier={order.carrier}
             />
-          </CardContent>
-        </Card>
-        <Card className="mb-6">
-          <CardContent className="py-6">
-            <h3 className="font-medium mb-4">{`What's next?`}</h3>
-            <ul className="space-y-3 text-sm">
-              <li className="flex items-start gap-3">
-                <Mail className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                <span>
-                  <strong>Check your email</strong>{" "}
-                  {`— We've sent a confirmation with your order details`}
-                </span>
-              </li>
-              <li className="flex items-start gap-3">
-                <Package className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                <span>
-                  <strong>Track your order</strong> — Visit your account to see
-                  real-time updates
-                </span>
-              </li>
-            </ul>
           </CardContent>
         </Card>
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">

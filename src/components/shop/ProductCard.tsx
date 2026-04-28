@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import Link from "next/link";
 import { Heart, Minus, Plus, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -21,6 +22,7 @@ export type ProductView = {
   category: string;
   sellerId: string;
   isActive?: boolean;
+  compareAtPrice?: number;
 };
 
 export function ProductCard({ product }: { product: ProductView }) {
@@ -35,6 +37,7 @@ export function ProductCard({ product }: { product: ProductView }) {
   const qty = line?.quantity ?? 0;
   const inCart = qty > 0;
   const atMax = qty >= product.stock;
+  const remaining = product.stock - qty;
 
   function doAdd() {
     if (!canAdd) {
@@ -85,67 +88,90 @@ export function ProductCard({ product }: { product: ProductView }) {
   }
 
   return (
-    <Card className="overflow-hidden">
-      <div className="relative aspect-square bg-muted">
-        {image ? (
-          image.startsWith("http") && !image.includes("cloudinary.com") ? (
-            <img
-              src={image}
-              alt={product.name}
-              className="object-cover"
-              width={200}
-              height={200}
-            />
+    <Card className="overflow-hidden group">
+      <Link href={`/product/${product._id}`} className="block no-underline">
+        <div className="relative aspect-square bg-muted overflow-hidden">
+          {image ? (
+            image.startsWith("http") && !image.includes("cloudinary.com") ? (
+              <img
+                src={image}
+                alt={product.name}
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                width={200}
+                height={200}
+              />
+            ) : (
+              <Image
+                src={image}
+                alt={product.name}
+                fill
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+              />
+            )
           ) : (
-            <Image
-              src={image}
-              alt={product.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+              No image
+            </div>
+          )}
+          <Badge className="absolute inset-s-2 top-2 z-10" variant="secondary">
+            {product.category}
+          </Badge>
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon-sm"
+            className="absolute inset-e-2 top-2 z-10 size-9 rounded-full shadow-sm"
+            disabled={wishPending}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              void doWishlistToggle();
+            }}
+            aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+            aria-pressed={inWishlist}
+          >
+            <Heart
+              className={cn("size-4", inWishlist && "fill-red-500 text-red-500")}
             />
-          )
-        ) : (
-          <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-            No image
-          </div>
-        )}
-        <Badge className="absolute inset-s-2 top-2 z-10" variant="secondary">
-          {product.category}
-        </Badge>
-        <Button
-          type="button"
-          variant="secondary"
-          size="icon-sm"
-          className="absolute inset-e-2 top-2 z-10 size-9 rounded-full shadow-sm"
-          disabled={wishPending}
-          onClick={(e) => {
-            e.preventDefault();
-            void doWishlistToggle();
-          }}
-          aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
-          aria-pressed={inWishlist}
-        >
-          <Heart
-            className={cn("size-4", inWishlist && "fill-red-500 text-red-500")}
-          />
-        </Button>
-      </div>
-      <CardHeader className="space-y-1 p-3 pb-0">
-        <h3 className="line-clamp-2 min-h-10 text-sm font-medium leading-snug">
-          {product.name}
-        </h3>
-      </CardHeader>
+          </Button>
+        </div>
+        <CardHeader className="space-y-1 p-3 pb-0">
+          <h3 className="line-clamp-2 min-h-10 text-sm font-medium leading-snug group-hover:text-primary transition-colors">
+            {product.name}
+          </h3>
+        </CardHeader>
+      </Link>
       <CardContent className="p-3 pt-2">
         <p className="line-clamp-2 text-xs text-muted-foreground">
           {product.description}
         </p>
         <div className="mt-3 flex items-center justify-between gap-2">
-          <span className="text-base font-bold">
-            ${product.price.toFixed(2)}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-base font-bold">
+              ${product.price.toFixed(2)}
+            </span>
+            {product.compareAtPrice && product.compareAtPrice > product.price && (
+              <span className="text-xs text-muted-foreground line-through">
+                ${product.compareAtPrice.toFixed(2)}
+              </span>
+            )}
+          </div>
+          <span
+            className={cn(
+              "text-xs font-medium",
+              remaining <= 0
+                ? "text-destructive"
+                : remaining <= 3
+                  ? "text-amber-600"
+                  : "text-muted-foreground",
+            )}
+          >
+            {remaining > 0
+              ? `${remaining} in stock`
+              : inCart
+                ? "All in your cart"
+                : "Out of stock"}
           </span>
         </div>
 
@@ -155,7 +181,7 @@ export function ProductCard({ product }: { product: ProductView }) {
             className="mt-3 w-full"
             size="sm"
             disabled={!canAdd}
-            onClick={doAdd}
+            onClick={(e) => { e.preventDefault(); doAdd(); }}
           >
             <ShoppingBag className="size-4" />
             Add to cart
@@ -167,7 +193,7 @@ export function ProductCard({ product }: { product: ProductView }) {
               variant="ghost"
               size="icon-sm"
               className="shrink-0"
-              onClick={doRemove}
+              onClick={(e) => { e.preventDefault(); doRemove(); }}
               aria-label="Decrease quantity"
             >
               <Minus className="size-4" />
@@ -181,17 +207,12 @@ export function ProductCard({ product }: { product: ProductView }) {
               size="icon-sm"
               className="shrink-0"
               disabled={!canAdd || atMax}
-              onClick={doAdd}
+              onClick={(e) => { e.preventDefault(); doAdd(); }}
               aria-label="Increase quantity"
             >
               <Plus className="size-4" />
             </Button>
           </div>
-        )}
-        {inCart && !canAdd && (
-          <p className="mt-2 text-center text-xs text-muted-foreground">
-            You have all available stock in your cart
-          </p>
         )}
       </CardContent>
     </Card>

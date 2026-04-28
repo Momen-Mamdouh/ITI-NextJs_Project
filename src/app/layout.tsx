@@ -8,7 +8,10 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
-  title: "E-Commerce Platform",
+  title: {
+    default: "ShopHub",
+    template: "%s | ShopHub",
+  },
   description: "Multi-role marketplace",
 };
 

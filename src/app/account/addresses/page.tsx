@@ -2,6 +2,8 @@ import { getProfile } from "@/features/user/actions";
 import { AddressList } from "@/features/user/components/AddressList";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export default async function AddressesPage() {
   const result = await getProfile();
 

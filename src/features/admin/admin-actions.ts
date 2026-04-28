@@ -22,7 +22,7 @@ export async function fetchUsers() {
     const users = await UserModel.find({}, { passwordHash: 0, savedCards: 0 })
       .sort({ createdAt: -1 })
       .lean();
-    return { success: true, data: users };
+    return { success: true, data: JSON.parse(JSON.stringify(users)) };
   } catch {
     return { success: false, error: "Failed to fetch users" };
   }

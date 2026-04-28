@@ -34,6 +34,8 @@ productSchema.index({ sellerId: 1, isActive: 1 });
 productSchema.index({ category: 1, price: 1 });
 productSchema.index({ name: "text", description: "text" });
 productSchema.pre("find", function () {
+  const opts = this.getOptions?.() as { includeInactive?: boolean } | undefined;
+  if (opts?.includeInactive) return;
   this.where({ isActive: { $ne: false } });
 });
 

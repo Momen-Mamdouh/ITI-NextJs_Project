@@ -1,5 +1,12 @@
 import { fetchSellerOrders } from "@/features/seller/seller-order-actions";
 import { SellerOrderTable } from "@/features/seller/components/SellerOrderTable";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Orders",
+};
+
+export const dynamic = "force-dynamic";
 
 export default async function SellerOrdersPage() {
   const result = await fetchSellerOrders();

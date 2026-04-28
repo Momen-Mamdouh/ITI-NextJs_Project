@@ -30,11 +30,26 @@ export async function fetchSellerProducts() {
   const sellerId = await getAuthenticatedSellerId();
   try {
     const products = await ProductModel.find({ sellerId })
+      .setOptions({ includeInactive: true })
       .sort({ createdAt: -1 })
       .lean();
-    return { success: true, data: products };
+    return { success: true, data: JSON.parse(JSON.stringify(products)) };
   } catch {
     return { success: false, error: "Failed to fetch products" };
+  }
+}
+
+export async function fetchSellerProductById(productId: string) {
+  const sellerId = await getAuthenticatedSellerId();
+  try {
+    const product = await ProductModel.findOne({ _id: productId, sellerId })
+      .setOptions({ includeInactive: true })
+      .lean();
+    if (!product)
+      return { success: false as const, error: "Product not found" };
+    return { success: true as const, data: JSON.parse(JSON.stringify(product)) };
+  } catch {
+    return { success: false as const, error: "Failed to fetch product" };
   }
 }
 

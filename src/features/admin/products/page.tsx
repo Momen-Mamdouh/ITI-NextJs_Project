@@ -29,7 +29,7 @@ export default async function AdminProductsPage() {
   }
 
   const [productsResult, activeCats, productCats] = await Promise.all([
-    fetchProducts({ sellerId: sellerMongoId }),
+    fetchProducts({ sellerId: sellerMongoId, includeInactive: true }),
     fetchActiveCategoryNames(),
     fetchProductCategoryNames(),
   ]);

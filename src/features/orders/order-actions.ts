@@ -3,9 +3,7 @@ import { z } from "zod";
 import { requireAuth } from "@/lib/auth";
 import dbConnect from "@/lib/db";
 import OrderModel from "@/features/orders/models/order.model";
-import UserModel from "@/features/user/models/user.model";
 import { revalidatePath } from "next/cache";
-import { sendOrderStatusEmail } from "@/lib/mailer";
 
 const UpdateOrderStatusSchema = z.object({
   orderId: z.string().min(1),
@@ -42,19 +40,10 @@ export async function fetchOrders(filters?: {
   }
   try {
     const orders = await OrderModel.find(query).sort({ createdAt: -1 }).lean();
-    return { success: true, data: orders };
+    return { success: true, data: JSON.parse(JSON.stringify(orders)) };
   } catch {
     return { success: false, error: "Failed to fetch orders" };
   }
-}
-
-async function resolveOrderEmail(order: { userId?: string; guestEmail?: string }): Promise<string | null> {
-  if (order.guestEmail) return order.guestEmail;
-  if (order.userId) {
-    const user = await UserModel.findById(order.userId).select("email").lean();
-    return (user as { email?: string } | null)?.email ?? null;
-  }
-  return null;
 }
 
 export async function updateOrderStatus(rawData: unknown) {
@@ -82,19 +71,6 @@ export async function updateOrderStatus(rawData: unknown) {
       },
       { new: true },
     ).lean();
-
-    if (order) {
-      const email = await resolveOrderEmail(order as { userId?: string; guestEmail?: string });
-      if (email) {
-        sendOrderStatusEmail({
-          to: email,
-          orderId,
-          newStatus: status,
-          trackingNumber,
-          carrier,
-        }).catch(() => {});
-      }
-    }
 
     revalidatePath("/admin/orders");
     revalidatePath("/account/orders");

@@ -38,6 +38,7 @@ interface OrderDoc {
 export function SellerOrderTable({ orders }: { orders: OrderDoc[] }) {
   const [search, setSearch] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<OrderDoc | null>(null);
+  const [statusOpen, setStatusOpen] = useState(false);
   const router = useRouter();
 
   const filtered = orders.filter((o) =>
@@ -76,7 +77,7 @@ export function SellerOrderTable({ orders }: { orders: OrderDoc[] }) {
                 </TableCell>
                 <TableCell>{order.items.length} item(s)</TableCell>
                 <TableCell>
-                  {new Date(order.createdAt).toLocaleDateString()}
+                  {new Date(order.createdAt).toLocaleDateString("en-US")}
                 </TableCell>
                 <TableCell>${order.totalAmount.toFixed(2)}</TableCell>
                 <TableCell>
@@ -93,47 +94,63 @@ export function SellerOrderTable({ orders }: { orders: OrderDoc[] }) {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <Dialog>
-                        <DialogTrigger>
-                          <DropdownMenuItem
-                            onSelect={(e) => {
-                              e.preventDefault();
-                              setSelectedOrder(order);
-                            }}
-                          >
-                            <CheckCircle className="mr-2 h-4 w-4" /> Update
-                            Status
-                          </DropdownMenuItem>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
-                          <DialogHeader>
-                            <DialogTitle>
-                              Update Order #{order._id.slice(-8)}
-                            </DialogTitle>
-                          </DialogHeader>
-                          {selectedOrder && (
-                            <SellerOrderStatusForm
-                              order={selectedOrder}
-                              onSuccess={() => router.refresh()}
-                            />
-                          )}
-                        </DialogContent>
-                      </Dialog>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {order.status === "delivered" ? (
+                    <span className="text-xs text-muted-foreground">
+                      No actions
+                    </span>
+                  ) : (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setStatusOpen(true);
+                          }}
+                        >
+                          <CheckCircle className="mr-2 h-4 w-4" /> Update Status
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
+
+      <Dialog
+        open={statusOpen}
+        onOpenChange={(next) => {
+          setStatusOpen(next);
+          if (!next) setSelectedOrder(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Update Order #{selectedOrder?._id.slice(-8) ?? ""}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedOrder && (
+            <SellerOrderStatusForm
+              order={selectedOrder}
+              onSuccess={() => {
+                setStatusOpen(false);
+                setSelectedOrder(null);
+                router.refresh();
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

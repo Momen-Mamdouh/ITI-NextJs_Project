@@ -16,12 +16,6 @@ export default async function LoginPage({ searchParams }: Props) {
         footer={
           <>
             <footer className="mt-6 flex flex-col gap-3 text-center">
-              <Link
-                href="/auth/forgot-password"
-                className="link-interactive text-sm font-medium"
-              >
-                Forgot password?
-              </Link>
               <p className="text-sm text-muted-foreground">
                 Don&apos;t have an account?{" "}
                 <Link

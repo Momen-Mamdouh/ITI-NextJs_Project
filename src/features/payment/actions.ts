@@ -48,7 +48,6 @@ export async function initiateCheckout(rawData: unknown) {
       intentId: intent.id,
     };
   } catch (error) {
-    console.error("Checkout initiation failed:", error);
     return { success: false, error: "Failed to initialize payment" };
   }
 }

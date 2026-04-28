@@ -5,6 +5,7 @@ export type ProductListFilters = {
   category?: string;
   search?: string;
   sellerId?: string;
+  includeInactive?: boolean;
   minPrice?: number;
   maxPrice?: number;
   inStockOnly?: boolean;
@@ -42,7 +43,10 @@ export async function queryProductList(filters?: ProductListFilters) {
   if (filters?.sort === "price_desc") sort = { price: -1 };
 
   try {
-    const products = await ProductModel.find(query).sort(sort).lean();
+    const products = await ProductModel.find(query)
+      .setOptions({ includeInactive: Boolean(filters?.includeInactive) })
+      .sort(sort)
+      .lean();
     return { success: true as const, data: products };
   } catch {
     return { success: false as const, error: "Failed to fetch products" };

@@ -7,7 +7,6 @@ import OrderModel from "@/features/orders/models/order.model";
 import UserModel from "@/features/user/models/user.model";
 import { cookies } from "next/headers";
 import { verifyToken } from "@/lib/token";
-import { sendOrderConfirmationEmail } from "@/lib/mailer";
 
 const ShippingSchema = z.object({
   fullName: z.string().min(2),
@@ -132,15 +131,6 @@ export async function placeOrder(rawData: unknown) {
   const guestEmail = validated.data.guestEmail;
   const guestName = validated.data.guestName;
 
-  async function resolveCustomerEmail(): Promise<string | null> {
-    if (guestEmail) return guestEmail;
-    if (userId) {
-      const user = await UserModel.findById(userId).select("email").lean();
-      return (user as { email?: string } | null)?.email ?? null;
-    }
-    return null;
-  }
-
   if (paymentMethod === "stripe") {
     const order = await OrderModel.create({
       userId: userId || undefined,
@@ -248,26 +238,6 @@ export async function placeOrder(rawData: unknown) {
 
   if (userId) {
     await UserModel.findByIdAndUpdate(userId, { $set: { cartItems: [] } });
-  }
-
-  const email = await resolveCustomerEmail();
-  if (email) {
-    sendOrderConfirmationEmail({
-      to: email,
-      orderId: String(order._id),
-      status: "pending",
-      totalAmount,
-      items: orderItems.map((i) => ({
-        name: i.name,
-        quantity: i.quantity,
-        price: i.price,
-      })),
-      shippingAddress: {
-        fullName: shippingAddress.fullName,
-        city: shippingAddress.city,
-        country: shippingAddress.country,
-      },
-    }).catch(() => {});
   }
 
   return {

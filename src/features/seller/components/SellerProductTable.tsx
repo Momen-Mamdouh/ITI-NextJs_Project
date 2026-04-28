@@ -24,7 +24,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Plus, Edit } from "lucide-react";
+import { MoreHorizontal, Plus, Edit, EyeOff, Eye } from "lucide-react";
 import { SellerProductForm } from "./SellerProductForm";
 import { toast } from "sonner";
 import { toggleSellerProductStatus } from "@/features/seller/seller-product-actions";
@@ -49,9 +49,6 @@ export function SellerProductTable({
   categoryOptions: { name: string }[];
 }) {
   const [search, setSearch] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState<ProductDoc | null>(
-    null,
-  );
   const router = useRouter();
 
   const filtered = products.filter(
@@ -83,11 +80,13 @@ export function SellerProductTable({
             className="border rounded px-3 py-2 text-sm"
           />
           <Dialog>
-            <DialogTrigger>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" /> Add Product
-              </Button>
-            </DialogTrigger>
+            <DialogTrigger
+              render={
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" /> Add Product
+                </Button>
+              }
+            />
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Add New Product</DialogTitle>
@@ -146,53 +145,42 @@ export function SellerProductTable({
 
                 <TableCell className="text-right align-top">
                   <DropdownMenu>
-                    <DropdownMenuTrigger>
-                      <button
-                        type="button"
-                        className={cn(
-                          "inline-flex items-center justify-center rounded-lg transition-all outline-none",
-                          "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                          "hover:bg-muted disabled:opacity-50",
-                          "size-8",
-                        )}
-                        aria-label="Open menu"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <Dialog>
-                        <DialogTrigger>
-                          <DropdownMenuItem
-                            onSelect={(e) => {
-                              e.preventDefault();
-                              setSelectedProduct(product);
-                            }}
-                          >
-                            <Edit className="mr-2 h-4 w-4" /> Edit
-                          </DropdownMenuItem>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>Edit Product</DialogTitle>
-                          </DialogHeader>
-                          {selectedProduct && (
-                            <SellerProductForm
-                              key={selectedProduct._id}
-                              categoryOptions={categoryOptions}
-                              initialData={selectedProduct}
-                              onSuccess={() => {
-                                router.refresh();
-                                toast.success("Product updated");
-                              }}
-                            />
+                    <DropdownMenuTrigger
+                      render={
+                        <button
+                          type="button"
+                          className={cn(
+                            "inline-flex items-center justify-center rounded-lg transition-all outline-none",
+                            "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                            "hover:bg-muted disabled:opacity-50",
+                            "size-8",
                           )}
-                        </DialogContent>
-                      </Dialog>
+                          aria-label="Open menu"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </button>
+                      }
+                    />
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() =>
+                          router.push(`/seller/products/${product._id}/edit`)
+                        }
+                      >
+                        <Edit className="mr-2 h-4 w-4" /> Edit
+                      </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => handleToggle(product._id)}
                       >
-                        {product.isActive ? "Deactivate" : "Activate"}
+                        {product.isActive ? (
+                          <>
+                            <EyeOff className="mr-2 h-4 w-4" /> Deactivate
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="mr-2 h-4 w-4" /> Activate
+                          </>
+                        )}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

@@ -92,7 +92,7 @@ export function OrderTimeline({
                 )}
                 {entry.createdAt && (
                   <time className="text-xs text-muted-foreground">
-                    {new Date(entry.createdAt).toLocaleString()}
+                    {new Date(entry.createdAt).toLocaleString("en-US")}
                   </time>
                 )}
               </div>

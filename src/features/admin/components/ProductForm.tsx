@@ -31,9 +31,14 @@ const ProductFormSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   price: z.coerce.number().pipe(z.number().positive("Price must be positive")),
-  compareAtPrice: z
-    .union([z.coerce.number().positive(), z.literal("")])
-    .optional(),
+  compareAtPrice: z.preprocess(
+    (val) => {
+      if (val === "" || val === null || val === undefined) return undefined;
+      const n = Number(val);
+      return Number.isFinite(n) ? n : undefined;
+    },
+    z.number().positive().optional(),
+  ),
   stock: z.coerce
     .number()
     .pipe(z.number().int().min(0, "Stock cannot be negative")),
@@ -102,6 +107,9 @@ export function ProductForm({
     setLoading(true);
     try {
       const payload: Record<string, unknown> = { ...parsed };
+      if (payload.compareAtPrice === undefined) {
+        delete payload.compareAtPrice;
+      }
 
       if (variant === "admin" && !initialData?._id && adminSellerId) {
         payload.sellerId = adminSellerId;

@@ -7,6 +7,8 @@ import UserModel from "@/features/user/models/user.model";
 import ReviewModel from "@/features/user/models/review.model";
 import OrderModel from "@/features/orders/models/order.model";
 import ProductModel from "@/features/products/models/product.model";
+import { z } from "zod";
+import { revalidatePath } from "next/cache";
 
 // ─── Profile ────────────────────────────────────────────
 
@@ -91,7 +93,7 @@ export async function updateAddress(addressId: string, rawData: unknown) {
   const user = await UserModel.findOneAndUpdate(
     { _id: session.id, "addresses._id": addressId },
     { $set: setFields },
-    { new: true },
+    { returnDocument: "after" },
   ).lean();
 
   return { success: true, addresses: JSON.parse(JSON.stringify(user?.addresses)) };
@@ -103,7 +105,7 @@ export async function deleteAddress(addressId: string) {
   const user = await UserModel.findByIdAndUpdate(
     session.id,
     { $pull: { addresses: { _id: addressId } } },
-    { new: true },
+    { returnDocument: "after" },
   ).lean();
 
   return { success: true, addresses: JSON.parse(JSON.stringify(user?.addresses)) };
@@ -336,6 +338,53 @@ export async function deleteReview(reviewId: string) {
     rating: stats.length > 0 ? Math.round(stats[0].avg * 10) / 10 : 0,
     reviewCount: stats.length > 0 ? stats[0].count : 0,
   });
+
+  return { success: true };
+}
+
+export async function updateReview(reviewId: string, rawData: unknown) {
+  await dbConnect();
+  const session = await requireAuth();
+
+  const UpdateReviewSchema = z.object({
+    rating: z.number().int().min(1).max(5),
+    title: z.string().max(120).optional(),
+    comment: z.string().max(2000).optional(),
+  });
+
+  const validated = UpdateReviewSchema.safeParse(rawData);
+  if (!validated.success)
+    return { success: false, errors: validated.error.flatten().fieldErrors };
+
+  const existing = await ReviewModel.findOne({ _id: reviewId, userId: session.id });
+  if (!existing) return { success: false, error: "Review not found" };
+
+  const { rating, title, comment } = validated.data;
+
+  await ReviewModel.findOneAndUpdate(
+    { _id: reviewId, userId: session.id },
+    {
+      $set: {
+        rating,
+        title: title || undefined,
+        comment: comment || undefined,
+      },
+    },
+    { returnDocument: "after" },
+  );
+
+  const stats = await ReviewModel.aggregate([
+    { $match: { productId: existing.productId } },
+    { $group: { _id: null, avg: { $avg: "$rating" }, count: { $sum: 1 } } },
+  ]);
+
+  await ProductModel.findByIdAndUpdate(existing.productId, {
+    rating: stats.length > 0 ? Math.round(stats[0].avg * 10) / 10 : 0,
+    reviewCount: stats.length > 0 ? stats[0].count : 0,
+  });
+
+  revalidatePath(`/product/${existing.productId.toString()}`);
+  revalidatePath("/account/reviews");
 
   return { success: true };
 }

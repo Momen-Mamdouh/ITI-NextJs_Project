@@ -41,11 +41,16 @@ type CartContextValue = {
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartLine[]>(() => readCartFromStorage());
-  const [isHydrated] = useState(true);
+  const [items, setItems] = useState<CartLine[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
   const [user, setUser] = useState<SessionUser>(null);
   const pathname = usePathname();
   const didInitialCustomerSync = useRef(false);
+
+  useEffect(() => {
+    setItems(readCartFromStorage());
+    setIsHydrated(true);
+  }, []);
 
   useEffect(() => {
     if (!user) didInitialCustomerSync.current = false;
@@ -104,12 +109,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     const urlParams = new URLSearchParams(window.location.search);
     const stripeSuccess = urlParams.get("stripe") === "success";
-    const orderId = urlParams.get("orderId");
+    const isConfirmationPage = window.location.pathname.startsWith("/checkout/confirmation/");
 
-    if (stripeSuccess && orderId && !hasClearedRef.current) {
+    if (stripeSuccess && isConfirmationPage && !hasClearedRef.current) {
       hasClearedRef.current = true;
       clearLocal();
-      // Clean URL without triggering re-render
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [isHydrated, clearLocal]);
@@ -186,7 +190,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo((): CartContextValue => {
     const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
-    const itemCount = items.reduce((s, i) => s + i.quantity, 0);
+    const itemCount = items.length;
     return {
       items,
       itemCount,

@@ -1,6 +1,11 @@
 import { getProfile } from "@/features/user/actions";
 import { ProfileForm } from "@/features/user/components/ProfileForm";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Profile",
+};
 
 export default async function ProfilePage() {
   const result = await getProfile();

@@ -90,7 +90,6 @@ export async function requestPayout(rawData: unknown) {
     return { success: false, error: "Insufficient available balance" };
   }
 
-  console.log(`Payout requested: $${amount} for seller ${session.id}`);
   revalidatePath("/seller/earnings");
   return { success: true };
 }

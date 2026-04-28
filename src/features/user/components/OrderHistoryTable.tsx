@@ -88,7 +88,7 @@ export function OrderHistoryTable({
                 #{order._id.slice(-8)}
               </TableCell>
               <TableCell className="text-muted-foreground">
-                {new Date(order.createdAt).toLocaleDateString()}
+                {new Date(order.createdAt).toLocaleDateString("en-US")}
               </TableCell>
               <TableCell>{order.items.length} item(s)</TableCell>
               <TableCell className="font-medium">

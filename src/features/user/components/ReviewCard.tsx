@@ -96,7 +96,7 @@ export function ReviewCard({ review }: ReviewCardProps) {
         )}
 
         <p className="text-xs text-muted-foreground">
-          {new Date(review.createdAt).toLocaleDateString()}
+          {new Date(review.createdAt).toLocaleDateString("en-US")}
         </p>
       </CardContent>
     </Card>

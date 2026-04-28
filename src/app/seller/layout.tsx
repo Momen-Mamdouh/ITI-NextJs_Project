@@ -1,5 +1,14 @@
 import { SellerSidebar } from "@/features/seller/components/SellerSidebar";
-import { SellerHeader } from "@/features/seller/components/SellerHeader";
+import type { Metadata } from "next";
+
+export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: {
+    default: "Seller",
+    template: "%s | Seller",
+  },
+};
 
 export default function SellerLayout({
   children,
@@ -10,7 +19,6 @@ export default function SellerLayout({
     <div className="flex min-h-screen">
       <SellerSidebar />
       <div className="flex-1 flex flex-col">
-        <SellerHeader />
         <main className="flex-1 p-6 bg-muted/10">{children}</main>
       </div>
     </div>

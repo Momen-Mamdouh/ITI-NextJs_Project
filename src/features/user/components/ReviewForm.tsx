@@ -18,7 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { ReviewSchema } from "@/features/user/schemas";
-import { createReview } from "@/features/user/actions";
+import { createReview, updateReview } from "@/features/user/actions";
 import { toast } from "sonner";
 
 type ReviewValues = z.infer<typeof ReviewSchema>;
@@ -26,6 +26,8 @@ type ReviewValues = z.infer<typeof ReviewSchema>;
 interface ReviewFormProps {
   productId: string;
   orderId?: string;
+  reviewId?: string;
+  initialValues?: Partial<ReviewValues>;
   onDone?: () => void;
 }
 
@@ -64,7 +66,13 @@ function StarInput({
   );
 }
 
-export function ReviewForm({ productId, orderId, onDone }: ReviewFormProps) {
+export function ReviewForm({
+  productId,
+  orderId,
+  reviewId,
+  initialValues,
+  onDone,
+}: ReviewFormProps) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -73,9 +81,9 @@ export function ReviewForm({ productId, orderId, onDone }: ReviewFormProps) {
     defaultValues: {
       productId,
       orderId: orderId || undefined,
-      rating: 0,
-      title: "",
-      comment: "",
+      rating: initialValues?.rating ?? 0,
+      title: initialValues?.title ?? "",
+      comment: initialValues?.comment ?? "",
     },
   });
 
@@ -85,9 +93,15 @@ export function ReviewForm({ productId, orderId, onDone }: ReviewFormProps) {
       return;
     }
     setLoading(true);
-    const result = await createReview(values);
+    const result = reviewId
+      ? await updateReview(reviewId, {
+          rating: values.rating,
+          title: values.title,
+          comment: values.comment,
+        })
+      : await createReview(values);
     if (result.success) {
-      toast.success("Review submitted");
+      toast.success(reviewId ? "Review updated" : "Review submitted");
       router.refresh();
       onDone?.();
     } else {
@@ -159,7 +173,13 @@ export function ReviewForm({ productId, orderId, onDone }: ReviewFormProps) {
 
         <div className="flex gap-2">
           <Button type="submit" disabled={loading}>
-            {loading ? "Submitting..." : "Submit Review"}
+            {loading
+              ? reviewId
+                ? "Saving..."
+                : "Submitting..."
+              : reviewId
+                ? "Save changes"
+                : "Submit Review"}
           </Button>
           {onDone && (
             <Button type="button" variant="outline" onClick={onDone}>

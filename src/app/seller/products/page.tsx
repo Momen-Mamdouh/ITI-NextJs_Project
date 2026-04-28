@@ -2,6 +2,11 @@ import { fetchSellerProducts } from "@/features/seller/seller-product-actions";
 import { fetchActiveCategoryNames } from "@/features/category/category-actions";
 import { fetchProductCategoryNames } from "@/features/products/product-actions";
 import { SellerProductTable } from "@/features/seller/components/SellerProductTable";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Products",
+};
 
 function mergeCategoryNames(a: string[], b: string[]): { name: string }[] {
   const set = new Set<string>([...a, ...b]);

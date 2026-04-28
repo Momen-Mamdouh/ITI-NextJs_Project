@@ -12,7 +12,6 @@ import {
   ArrowLeft,
   CheckCircle2,
   MapPin,
-  User,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -64,11 +63,6 @@ type ShippingForm = {
   phone: string;
 };
 
-type GuestForm = {
-  name: string;
-  email: string;
-};
-
 const emptyShipping: ShippingForm = {
   fullName: "",
   addressLine1: "",
@@ -95,7 +89,6 @@ export default function CheckoutPage() {
   // Form state
   const [step] = useState(2);
   const [shipping, setShipping] = useState(emptyShipping);
-  const [guest, setGuest] = useState<GuestForm>({ name: "", email: "" });
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>("cod");
   const [notes, setNotes] = useState("");
   const [placing, setPlacing] = useState(false);
@@ -106,13 +99,14 @@ export default function CheckoutPage() {
     (ShippingForm & { _id: string; label?: string })[]
   >([]);
 
-  const isGuest = !user;
   const isCustomer = user?.role === "customer";
 
-  // Redirect non-customers
+  // Require login as customer
   useEffect(() => {
     if (!isHydrated) return;
-    if (user && user.role !== "customer") {
+    if (!user) {
+      router.replace("/auth/login?next=/checkout");
+    } else if (user.role !== "customer") {
       router.replace("/");
     }
   }, [isHydrated, user, router]);
@@ -161,7 +155,7 @@ export default function CheckoutPage() {
     );
   }
 
-  if (user && user.role !== "customer") return null;
+  if (!user || user.role !== "customer") return null;
 
   if (items.length === 0) {
     return (
@@ -216,17 +210,6 @@ export default function CheckoutPage() {
     if (!shipping.state.trim()) errors.push("State is required");
     if (!shipping.postalCode.trim()) errors.push("Postal code is required");
 
-    // Guest validation
-    if (isGuest) {
-      if (!guest.name.trim()) errors.push("Your name is required");
-      if (
-        !guest.email.trim() ||
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guest.email)
-      ) {
-        errors.push("Valid email is required");
-      }
-    }
-
     return errors;
   };
 
@@ -259,8 +242,6 @@ export default function CheckoutPage() {
           phone: shipping.phone?.trim() || undefined,
         },
         paymentMethod,
-        guestEmail: isGuest ? guest.email.trim() : undefined,
-        guestName: isGuest ? guest.name.trim() : undefined,
         notes: notes.trim() || undefined,
       });
 
@@ -269,21 +250,15 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Handle Stripe redirect
       if (result.stripeUrl) {
-        // Cart will be cleared after successful payment via webhook
-
         window.location.href = result.stripeUrl;
-        await clearLocal();
         return;
       }
 
-      // For non-Stripe payments, clear cart immediately
       clearLocal();
       toast.success("Order placed successfully!");
       router.push(`/checkout/confirmation/${result.orderId}`);
     } catch (error) {
-      console.error("Checkout error:", error);
       toast.error("Something went wrong. Please try again.");
     } finally {
       setPlacing(false);
@@ -342,70 +317,12 @@ export default function CheckoutPage() {
       </div>
 
       <p className="mb-8 text-sm text-muted-foreground">
-        {isGuest
-          ? "Complete as guest or sign in to track your order."
-          : "Review your items and complete your order."}
+        Review your items and complete your order.
       </p>
 
       <div className="grid gap-8 lg:grid-cols-5">
         {/* Left: Forms */}
         <div className="space-y-6 lg:col-span-3">
-          {/* Guest Info */}
-          {isGuest && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Contact Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-xs text-muted-foreground">
-                  Want to track orders and save your cart?{" "}
-                  <Link
-                    href="/auth/register?next=/checkout"
-                    className="text-primary underline"
-                  >
-                    Create an account
-                  </Link>{" "}
-                  or{" "}
-                  <Link
-                    href="/auth/login?next=/checkout"
-                    className="text-primary underline"
-                  >
-                    sign in
-                  </Link>
-                  .
-                </p>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="guest-name">Full name *</Label>
-                    <Input
-                      id="guest-name"
-                      value={guest.name}
-                      onChange={(e) =>
-                        setGuest((g) => ({ ...g, name: e.target.value }))
-                      }
-                      placeholder="John Doe"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="guest-email">Email *</Label>
-                    <Input
-                      id="guest-email"
-                      type="email"
-                      value={guest.email}
-                      onChange={(e) =>
-                        setGuest((g) => ({ ...g, email: e.target.value }))
-                      }
-                      placeholder="you@example.com"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Shipping Address */}
           <Card>
             <CardHeader>

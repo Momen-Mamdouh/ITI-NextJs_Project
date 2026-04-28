@@ -47,7 +47,7 @@ export async function fetchBanners() {
     const banners = await BannerModel.find({})
       .sort({ position: 1, sortOrder: 1 })
       .lean();
-    return { success: true, data: banners };
+    return { success: true, data: JSON.parse(JSON.stringify(banners)) };
   } catch {
     return { success: false, error: "Failed to fetch banners" };
   }

@@ -31,7 +31,7 @@ export async function fetchCategories() {
   await dbConnect();
   try {
     const categories = await CategoryModel.find({}).sort({ name: 1 }).lean();
-    return { success: true, data: categories };
+    return { success: true, data: JSON.parse(JSON.stringify(categories)) };
   } catch {
     return { success: false, error: "Failed to fetch categories" };
   }
@@ -69,7 +69,7 @@ export async function createCategory(rawData: unknown) {
     revalidatePath("/admin/categories");
     revalidatePath("/admin/products");
     revalidatePath("/");
-    return { success: true, data: { id: category._id } };
+    return { success: true, data: { id: category._id.toString() } };
   } catch {
     return { success: false, error: "Failed to create category (duplicate slug?)" };
   }

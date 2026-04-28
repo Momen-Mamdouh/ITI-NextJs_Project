@@ -5,7 +5,6 @@ import dbConnect from "@/lib/db";
 import OrderModel from "@/features/orders/models/order.model";
 import ProductModel from "@/features/products/models/product.model";
 import UserModel from "@/features/user/models/user.model";
-import { sendOrderConfirmationEmail } from "@/lib/mailer";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2026-03-25.dahlia",
@@ -66,37 +65,6 @@ export async function POST(request: NextRequest) {
         $set: { cartItems: [] },
       });
     }
-
-    let customerEmail: string | null = order.guestEmail || null;
-    if (!customerEmail && order.userId) {
-      const user = await UserModel.findById(order.userId)
-        .select("email")
-        .lean();
-      customerEmail = (user as { email?: string } | null)?.email ?? null;
-    }
-
-    if (customerEmail) {
-      sendOrderConfirmationEmail({
-        to: customerEmail,
-        orderId: String(order._id),
-        status: "processing",
-        totalAmount: order.totalAmount,
-        items: order.items.map(
-          (i: { name: string; quantity: number; price: number }) => ({
-            name: i.name,
-            quantity: i.quantity,
-            price: i.price,
-          }),
-        ),
-        shippingAddress: order.shippingAddress
-          ? {
-              fullName: order.shippingAddress.fullName,
-              city: order.shippingAddress.city,
-              country: order.shippingAddress.country,
-            }
-          : undefined,
-      }).catch((err) => console.error("Email send failed:", err));
-    }
   }
 
   if (
@@ -124,5 +92,3 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ received: true });
 }
-
-export const config = { api: { bodyParser: false } };

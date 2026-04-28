@@ -90,7 +90,7 @@ export function OrderTable({ orders }: { orders: OrderDoc[] }) {
                   {order.shippingAddress?.fullName || "N/A"}
                 </TableCell>
                 <TableCell>
-                  {new Date(order.createdAt).toLocaleDateString()}
+                  {new Date(order.createdAt).toLocaleDateString("en-US")}
                 </TableCell>
                 <TableCell>${order.totalAmount.toFixed(2)}</TableCell>
                 <TableCell>
@@ -112,15 +112,17 @@ export function OrderTable({ orders }: { orders: OrderDoc[] }) {
                 </TableCell>
                 <TableCell className="text-right">
                   <Dialog>
-                    <DialogTrigger>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setSelectedOrder(order)}
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DialogTrigger>
+                    <DialogTrigger
+                      render={
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setSelectedOrder(order)}
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      }
+                    />
                     <DialogContent className="sm:max-w-md">
                       <DialogHeader>
                         <DialogTitle>

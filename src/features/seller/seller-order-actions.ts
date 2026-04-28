@@ -3,11 +3,9 @@ import { z } from "zod";
 import { requireAuth } from "@/lib/auth";
 import dbConnect from "@/lib/db";
 import OrderModel from "@/features/orders/models/order.model";
-import UserModel from "@/features/user/models/user.model";
 import SellerModel from "@/features/seller/models/seller.model";
 import mongoose from "mongoose";
 import { revalidatePath } from "next/cache";
-import { sendOrderStatusEmail } from "@/lib/mailer";
 
 async function getSellerObjectId() {
   await dbConnect();
@@ -39,19 +37,10 @@ export async function fetchSellerOrders() {
       { $replaceRoot: { newRoot: "$root" } },
       { $sort: { createdAt: -1 } },
     ]);
-    return { success: true, data: orders };
+    return { success: true, data: JSON.parse(JSON.stringify(orders)) };
   } catch {
     return { success: false, error: "Failed to fetch orders" };
   }
-}
-
-async function resolveOrderEmail(order: { userId?: string; guestEmail?: string }): Promise<string | null> {
-  if (order.guestEmail) return order.guestEmail;
-  if (order.userId) {
-    const user = await UserModel.findById(order.userId).select("email").lean();
-    return (user as { email?: string } | null)?.email ?? null;
-  }
-  return null;
 }
 
 export async function updateSellerOrderStatus(rawData: unknown) {
@@ -80,19 +69,8 @@ export async function updateSellerOrderStatus(rawData: unknown) {
           },
         },
       },
-      { new: true },
+      { returnDocument: "after" },
     ).lean();
-
-    if (updated) {
-      const email = await resolveOrderEmail(updated as { userId?: string; guestEmail?: string });
-      if (email) {
-        sendOrderStatusEmail({
-          to: email,
-          orderId,
-          newStatus: status,
-        }).catch(() => {});
-      }
-    }
 
     revalidatePath("/seller/orders");
     revalidatePath("/account/orders");

@@ -55,6 +55,32 @@ export async function fetchProducts(filters?: ProductListFilters) {
   return queryProductList(filters);
 }
 
+export async function fetchProductById(id: string) {
+  await dbConnect();
+  try {
+    const product = await ProductModel.findById(id).lean();
+    if (!product) return { success: false as const, error: "Product not found" };
+    return { success: true as const, data: JSON.parse(JSON.stringify(product)) };
+  } catch {
+    return { success: false as const, error: "Failed to fetch product" };
+  }
+}
+
+export async function fetchProductReviews(productId: string) {
+  await dbConnect();
+  const ReviewModel = (await import("@/features/user/models/review.model")).default;
+  const UserModel = (await import("@/features/user/models/user.model")).default;
+  try {
+    const reviews = await ReviewModel.find({ productId })
+      .populate({ path: "userId", model: UserModel, select: "name _id" })
+      .sort({ createdAt: -1 })
+      .lean();
+    return { success: true as const, data: JSON.parse(JSON.stringify(reviews)) };
+  } catch {
+    return { success: false as const, error: "Failed to fetch reviews" };
+  }
+}
+
 export async function createProduct(rawData: unknown) {
   const session = await requireAuth(["admin", "seller"]);
   const validated = ProductWriteSchema.safeParse(rawData);
@@ -92,7 +118,7 @@ export async function createProduct(rawData: unknown) {
     revalidatePath("/admin/products");
     revalidatePath("/seller/products");
     revalidatePath("/");
-    return { success: true, data: { id: product._id } };
+    return { success: true, data: { id: product._id.toString() } };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error: unknown) {
     return { success: false, error: "Failed to create product" };
@@ -121,12 +147,12 @@ export async function updateProduct(productId: string, rawData: unknown) {
     const updated = await ProductModel.findByIdAndUpdate(
       productId,
       validated.data,
-      { new: true },
+      { returnDocument: "after" },
     );
     revalidatePath("/admin/products");
     revalidatePath("/seller/products");
     revalidatePath("/");
-    return { success: true, data: { id: updated!._id } };
+    return { success: true, data: { id: updated!._id.toString() } };
   } catch {
     return { success: false, error: "Failed to update product" };
   }
@@ -182,5 +208,25 @@ export async function softDeleteProduct(productId: string) {
     return { success: true };
   } catch {
     return { success: false, error: "Failed to delete product" };
+  }
+}
+
+export async function deleteProductPermanently(productId: string) {
+  await requireAuth(["admin"]);
+  await dbConnect();
+  try {
+    const product = await ProductModel.findById(productId).select("_id").lean();
+    if (!product) return { success: false as const, error: "Product not found" };
+
+    await ProductModel.findByIdAndDelete(productId);
+
+    const ReviewModel = (await import("@/features/user/models/review.model")).default;
+    await ReviewModel.deleteMany({ productId });
+
+    revalidatePath("/admin/products");
+    revalidatePath("/");
+    return { success: true as const };
+  } catch {
+    return { success: false as const, error: "Failed to delete product" };
   }
 }

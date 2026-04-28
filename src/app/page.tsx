@@ -8,6 +8,11 @@ import {
   parseProductListParams,
   type ShopSearchParams,
 } from "@/lib/shop-filters";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Home",
+};
 
 function toView(p: unknown): ProductView {
   const x = p as {
@@ -15,6 +20,7 @@ function toView(p: unknown): ProductView {
     name: string;
     description: string;
     price: number;
+    compareAtPrice?: number;
     images: string[];
     stock: number;
     category: string;
@@ -26,6 +32,7 @@ function toView(p: unknown): ProductView {
     name: x.name,
     description: x.description,
     price: x.price,
+    compareAtPrice: x.compareAtPrice,
     images: x.images,
     stock: x.stock,
     category: x.category,
@@ -52,22 +59,11 @@ export default async function Home({
     toView,
   );
   const categoryNames = categoryNamesRes.success ? categoryNamesRes.names : [];
-  const storeEmpty =
-    initialProducts.length === 0 && categoryNames.length === 0;
+  const storeEmpty = initialProducts.length === 0 && categoryNames.length === 0;
 
   return (
     <main className="min-h-screen">
       <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
-        <div className="mb-8 text-center sm:mb-10">
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-            Shop
-          </h1>
-          <p className="mt-2 max-w-2xl mx-auto text-sm text-muted-foreground">
-            Filters apply as you change them. Add items to your cart; sign in as
-            a customer to sync your cart to your account.
-          </p>
-        </div>
-
         <ShopCatalog
           categoryNames={categoryNames}
           initialFilters={filters}

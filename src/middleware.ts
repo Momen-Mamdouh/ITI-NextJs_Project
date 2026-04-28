@@ -10,11 +10,38 @@ export async function middleware(request: NextRequest) {
   const isAdminRoute = pathname.startsWith("/admin");
   const isSellerRoute = pathname.startsWith("/seller");
   const isAccountRoute = pathname.startsWith("/account");
+  const isApiRoute = pathname.startsWith("/api");
+
+  const nextParamRaw = request.nextUrl.searchParams.get("next");
+  const safeNext =
+    nextParamRaw && nextParamRaw.startsWith("/") && !nextParamRaw.startsWith("//")
+      ? nextParamRaw
+      : null;
 
   if (isAuthRoute && accessToken) {
     const session = await verifyToken(accessToken);
     if (session) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(
+        new URL(
+          session.role === "admin"
+            ? "/admin"
+            : session.role === "seller"
+              ? "/seller"
+              : safeNext || "/",
+          request.url,
+        ),
+      );
+    }
+  }
+
+  // If an admin tries to access any non-admin page, send them to /admin.
+  if (!isAuthRoute && !isAdminRoute && !isApiRoute && accessToken) {
+    const session = await verifyToken(accessToken);
+    if (session?.role === "admin") {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
+    if (session?.role === "seller" && !isSellerRoute) {
+      return NextResponse.redirect(new URL("/seller", request.url));
     }
   }
 
@@ -55,9 +82,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/auth/:path*",
-    "/admin/:path*",
-    "/seller/:path*",
-    "/account/:path*",
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };

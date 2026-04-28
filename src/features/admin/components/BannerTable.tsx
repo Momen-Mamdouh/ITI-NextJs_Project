@@ -163,20 +163,22 @@ export function BannerTable({ banners }: { banners: BannerDoc[] }) {
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {banner.startDate
-                    ? new Date(banner.startDate).toLocaleDateString()
+                    ? new Date(banner.startDate).toLocaleDateString("en-US")
                     : "No start"}{" "}
                   →{" "}
                   {banner.endDate
-                    ? new Date(banner.endDate).toLocaleDateString()
+                    ? new Date(banner.endDate).toLocaleDateString("en-US")
                     : "No end"}
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
-                    <DropdownMenuTrigger>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
+                    <DropdownMenuTrigger
+                      render={
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      }
+                    />
                     <DropdownMenuContent align="end">
                       <Dialog>
                         <DialogTrigger>

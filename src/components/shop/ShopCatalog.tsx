@@ -16,6 +16,7 @@ function toView(p: unknown): ProductView {
     name: string;
     description: string;
     price: number;
+    compareAtPrice?: number;
     images: string[];
     stock: number;
     category: string;
@@ -27,6 +28,7 @@ function toView(p: unknown): ProductView {
     name: x.name,
     description: x.description,
     price: x.price,
+    compareAtPrice: x.compareAtPrice,
     images: x.images,
     stock: x.stock,
     category: x.category,

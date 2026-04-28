@@ -3,6 +3,11 @@ import { EarningsOverview } from "@/features/seller/components/EarningsOverview"
 import { WithdrawalForm } from "@/features/seller/components/WithdrawalForm";
 import { PayoutHistoryTable } from "@/features/seller/components/PayoutHistoryTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Earnings",
+};
 
 export default async function SellerEarningsPage() {
   const result = await fetchSellerEarnings();

@@ -38,11 +38,6 @@ const nextConfig: NextConfig = {
       // { protocol: "https", hostname: "**" },
     ],
   },
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: true,
   },

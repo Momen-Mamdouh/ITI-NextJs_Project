@@ -1,64 +1,42 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, User, Store, LogOut } from "lucide-react";
+import { ShoppingCart, User, Store } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/components/cart/CartProvider";
 import { Logo } from "@/shared/components/Logo";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { usePathname, useRouter } from "next/navigation";
+import { logoutUser } from "@/features/auth/actions";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
-import { logoutUser } from "@/features/auth/actions";
-
 export function SiteHeader() {
   const { itemCount, isHydrated, user } = useCart();
-
+  const pathname = usePathname();
   const router = useRouter();
+
   const handleSignOut = async () => {
     await logoutUser();
     router.push("/auth/login");
     router.refresh();
   };
 
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/seller")) {
+    return null;
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-      <div className="container flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2">
+      <div className="flex h-16 w-full items-center justify-between px-4 sm:px-6">
+        <Link href="/" className="flex items-center gap-2 no-underline">
           <Logo className="text-foreground" />
         </Link>
-
-        <nav className="hidden md:flex items-center gap-6">
-          <Link
-            href="/"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Shop
-          </Link>
-          {user?.role === "customer" && (
-            <Link
-              href="/account"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              My Account
-            </Link>
-          )}
-          {user && (user.role === "seller" || user.role === "admin") && (
-            <Link
-              href={user.role === "admin" ? "/admin" : "/seller"}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Dashboard
-            </Link>
-          )}
-        </nav>
 
         <div className="flex items-center gap-2">
           <ThemeToggle variant="ghost" size="icon-sm" />
@@ -68,7 +46,7 @@ export function SiteHeader() {
               href="/cart"
               className={cn(
                 buttonVariants({ variant: "outline", size: "sm" }),
-                "relative inline-flex gap-1.5 btn-interactive",
+                "relative inline-flex gap-1.5 btn-interactive no-underline",
               )}
             >
               <ShoppingCart className="h-4 w-4" />
@@ -76,7 +54,7 @@ export function SiteHeader() {
               {isHydrated && itemCount > 0 && (
                 <Badge
                   variant="default"
-                  className="absolute -top-1 -right-1 h-5 min-w-5 px-1 text-xs"
+                  className="absolute -top-1 -right-3 h-5 min-w-5 px-1 text-xs"
                 >
                   {itemCount > 99 ? "99+" : itemCount}
                 </Badge>
@@ -88,13 +66,16 @@ export function SiteHeader() {
             <>
               <Link
                 href="/auth/login"
-                className={buttonVariants({ variant: "ghost", size: "sm" })}
+                className={cn(
+                  buttonVariants({ variant: "ghost", size: "sm" }),
+                  "no-underline",
+                )}
               >
                 Sign in
               </Link>
               <Link
                 href="/auth/register"
-                className={buttonVariants({ size: "sm" })}
+                className={cn(buttonVariants({ size: "sm" }), "no-underline")}
               >
                 Register
               </Link>
@@ -114,16 +95,28 @@ export function SiteHeader() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem>
-                  <Link href="/account/profile">Profile</Link>
+                  <Link href="/account/profile" className="no-underline">
+                    Profile
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <Link href="/account/orders">Orders</Link>
+                  <Link href="/account/orders" className="no-underline">
+                    Orders
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <Link href="/account/wishlist">Wishlist</Link>
+                  <Link href="/account/wishlist" className="no-underline">
+                    Wishlist
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <Link href="/api/auth/logout">Sign out</Link>
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="w-full text-left"
+                  >
+                    Sign out
+                  </button>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -132,25 +125,12 @@ export function SiteHeader() {
               href={user.role === "admin" ? "/admin" : "/seller"}
               className={cn(
                 buttonVariants({ variant: "default", size: "sm" }),
-                "gap-1 btn-interactive",
+                "gap-1 btn-interactive no-underline",
               )}
             >
               <Store className="h-4 w-4" />
               {user.role === "admin" ? "Admin" : "Seller"}
             </Link>
-          )}
-          {user ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSignOut}
-              className="gap-1.5"
-            >
-              <LogOut className="size-4" />
-              <span className="hidden sm:inline">Sign Out</span>
-            </Button>
-          ) : (
-            <></>
           )}
         </div>
       </div>

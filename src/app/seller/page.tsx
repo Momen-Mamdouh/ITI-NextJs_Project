@@ -1,12 +1,73 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Package, ShoppingCart, TrendingUp } from "lucide-react";
+import { requireAuth } from "@/lib/auth";
+import dbConnect from "@/lib/db";
+import SellerModel from "@/features/seller/models/seller.model";
+import ProductModel from "@/features/products/models/product.model";
+import OrderModel from "@/features/orders/models/order.model";
+import type { Metadata } from "next";
 
-export default function SellerDashboard() {
+export const metadata: Metadata = {
+  title: "Dashboard",
+};
+
+export default async function SellerDashboard() {
+  const session = await requireAuth(["seller"]);
+  await dbConnect();
+
+  const seller = await SellerModel.findOne({ userId: session.id })
+    .select("_id")
+    .lean();
+  const sellerId = seller?._id;
+
+  const since = new Date();
+  since.setDate(since.getDate() - 30);
+
+  const [activeProducts, pendingOrders, revenueAgg] = await Promise.all([
+    sellerId
+      ? ProductModel.countDocuments({ sellerId, isActive: true })
+      : Promise.resolve(0),
+    sellerId
+      ? OrderModel.countDocuments({
+          status: "pending",
+          "items.sellerId": sellerId,
+        })
+      : Promise.resolve(0),
+    sellerId
+      ? OrderModel.aggregate([
+          {
+            $match: {
+              createdAt: { $gte: since },
+              paymentStatus: "paid",
+              "items.sellerId": sellerId,
+            },
+          },
+          { $group: { _id: null, revenue: { $sum: "$totalAmount" } } },
+        ])
+      : Promise.resolve([] as { revenue?: number }[]),
+  ]);
+
+  const revenue30d = Number(revenueAgg?.[0]?.revenue ?? 0);
   const stats = [
-    { title: "Total Revenue", value: "$0.00", icon: DollarSign, trend: "+0%" },
-    { title: "Active Products", value: "0", icon: Package, trend: "0" },
-    { title: "Pending Orders", value: "0", icon: ShoppingCart, trend: "0" },
-    { title: "Conversion Rate", value: "0%", icon: TrendingUp, trend: "0%" },
+    {
+      title: "Revenue (30d)",
+      value: `$${revenue30d.toFixed(2)}`,
+      icon: DollarSign,
+      trend: "",
+    },
+    {
+      title: "Active Products",
+      value: String(activeProducts),
+      icon: Package,
+      trend: "",
+    },
+    {
+      title: "Pending Orders",
+      value: String(pendingOrders),
+      icon: ShoppingCart,
+      trend: "",
+    },
+    { title: "Conversion Rate", value: "—", icon: TrendingUp, trend: "" },
   ];
 
   return (
@@ -28,9 +89,11 @@ export default function SellerDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">
-                {stat.trend} from last month
-              </p>
+              {stat.trend ? (
+                <p className="text-xs text-muted-foreground">
+                  {stat.trend} from last month
+                </p>
+              ) : null}
             </CardContent>
           </Card>
         ))}

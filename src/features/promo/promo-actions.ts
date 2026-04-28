@@ -35,7 +35,7 @@ export async function fetchPromos() {
   await dbConnect();
   try {
     const promos = await PromoModel.find({}).sort({ createdAt: -1 }).lean();
-    return { success: true, data: promos };
+    return { success: true, data: JSON.parse(JSON.stringify(promos)) };
   } catch {
     return { success: false, error: "Failed to fetch promo codes" };
   }

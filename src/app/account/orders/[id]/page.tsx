@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OrderTimeline } from "@/components/order/OrderTimeline";
+import type { Metadata } from "next";
 
 interface OrderDetailPageProps {
   params: Promise<{ id: string }>;
@@ -43,7 +44,7 @@ export default async function OrderDetailPage({
             Order #{order._id.slice(-8)}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Placed on {new Date(order.createdAt).toLocaleDateString()}
+            Placed on {new Date(order.createdAt).toLocaleDateString("en-US")}
           </p>
         </div>
       </div>
@@ -165,3 +166,7 @@ export default async function OrderDetailPage({
     </div>
   );
 }
+
+export const metadata: Metadata = {
+  title: "Order details",
+};

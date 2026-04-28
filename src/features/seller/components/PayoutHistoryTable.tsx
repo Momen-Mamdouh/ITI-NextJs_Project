@@ -49,7 +49,7 @@ export function PayoutHistoryTable() {
           <TableRow key={payout.id}>
             <TableCell className="font-mono text-sm">{payout.id}</TableCell>
             <TableCell>${payout.amount.toFixed(2)}</TableCell>
-            <TableCell>{new Date(payout.date).toLocaleDateString()}</TableCell>
+            <TableCell>{new Date(payout.date).toLocaleDateString("en-US")}</TableCell>
             <TableCell>{payout.method}</TableCell>
             <TableCell>
               <Badge
