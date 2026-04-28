@@ -33,13 +33,17 @@ export function LoginForm() {
     setError(null);
     const result = await loginUser(values);
     if (result.success) {
-      router.push(
-        result.user?.role === "admin"
-          ? "/admin"
-          : result.user?.role === "seller"
-            ? "/seller"
-            : "/",
-      );
+      const role = result.user?.role;
+
+      if (role === "admin") {
+        router.push("/admin"); // ← Changed from /admin/users
+      } else if (role === "seller") {
+        router.push("/seller");
+      } else {
+        if (role === "customer") {
+          router.push("/");
+        }
+      }
       router.refresh();
     } else {
       setError(
